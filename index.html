@@ -28,9 +28,11 @@
         label { font-size: 10px; font-weight: 800; color: var(--sub); text-transform: uppercase; }
         input { padding: 14px; border: 1.5px solid var(--sub); border-radius: 10px; font-size: 16px; background: var(--bg); color: var(--text); width: 100%; box-sizing: border-box; }
         .btn-print { background: #34c759; color: #fff; display: none; margin-top: 15px; width: 100%; padding: 18px; border-radius: 14px; border: none; font-weight: 800; font-size: 16px; text-transform: uppercase; }
+        .print-hint { display: none; text-align: center; font-size: 12px; color: var(--sub); margin-top: 10px; font-weight: 600; }
         #print-zone { display: grid; gap: 30px; justify-content: center; width: 100%; margin: 40px auto; padding-bottom: 50px; }
         
-        .label-style { display: flex; width: 1.5in; height: 1in; background: #fff !important; border: 1px solid #ccc; flex-direction: column; justify-content: center; align-items: center; position: relative; color: #000 !important; transform: scale(1.3); transform-origin: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); overflow: hidden; page-break-after: always; }
+        /* Aperçu écran : vraie taille (pas de transform scale), bordure pointillée */
+        .label-style { display: flex; width: 1.5in; height: 1in; background: #fff !important; border: 1px dashed #999; flex-direction: column; justify-content: center; align-items: center; position: relative; color: #000 !important; box-shadow: 0 4px 15px rgba(0,0,0,0.1); overflow: hidden; page-break-after: always; }
         .txt-row1 { font-size: 9pt; font-weight: bold; margin-bottom: 1px; }
         .txt-row2 { font-size: 11pt; font-weight: bold; color: #444; margin-bottom: 3px; }
         .barcode-box { width: 100%; display: flex; justify-content: center; align-items: center; overflow: hidden; }
@@ -38,17 +40,17 @@
         /* Chiffres épurés pour l'onglet Étoile */
         .res-text { font-weight: 800; font-size: 7pt; margin-top: 5px; letter-spacing: 1px; }
 
-        canvas { max-height: 0.55in; max-width: 92%; image-rendering: pixelated; }
+        /* Toujours des <img> PNG (jamais de canvas) pour un rendu fiable à l'impression */
+        .barcode-box img { max-height: 0.55in; max-width: 92%; image-rendering: pixelated; }
         .theme-toggle { position: fixed; bottom: 20px; left: 20px; width: 50px; height: 50px; background: var(--card); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1000; border: 1px solid var(--sub); font-size: 22px; cursor: pointer; }
-        @media (max-width: 600px) { .grid-inputs { grid-template-columns: 1fr; } .label-style { transform: scale(1.1); } }
-        @media print { .no-print, nav, .container, .theme-toggle { display: none !important; } #print-zone { display: block !important; margin: 0; } .label-style { display: flex !important; width: 1.5in !important; height: 1in !important; transform: scale(1) !important; border: none !important; margin: 0 !important; } @page { size: 1.5in 1in; margin: 0; } }
+        @media (max-width: 600px) { .grid-inputs { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
-    <div class="theme-toggle no-print" onclick="toggleDarkMode()">🌓</div>
+    <div class="theme-toggle" onclick="toggleDarkMode()">🌓</div>
 
-    <nav class="no-print">
+    <nav>
         <div class="nav-wrapper">
             <div class="nav-container">
                 <div id="btn-emp" class="nav-item" onclick="switchTab('emplacement', this)">Emplacement</div>
@@ -59,7 +61,7 @@
         </div>
     </nav>
 
-    <div class="container no-print">
+    <div class="container">
         <div class="card">
             <h2 id="tab-title" style="text-align:center;">Emplacement</h2>
             <div class="mode-selector" id="mode-ui">
@@ -68,7 +70,8 @@
             </div>
             <div id="area-selection-zone" style="display:none;"><label style="display:block; margin-bottom:10px;">Choisir l'Area</label><div class="area-grid" id="area-grid-btns"></div></div>
             <div id="form-container"></div>
-            <button id="btnPrint" class="btn-print" onclick="window.print()">IMPRIMER </button>
+            <button id="btnPrint" class="btn-print" onclick="printLabels()">IMPRIMER</button>
+            <p class="print-hint" id="printHint">⚠️ Dialogue d'impression : Marges = <b>Aucune</b> | Échelle = <b>100%</b></p>
             <button onclick="location.reload()" style="background:none; color:var(--sub); border:none; width:100%; margin-top:15px; font-size:12px; cursor:pointer; font-weight: 600;">Réinitialiser</button>
         </div>
     </div>
@@ -77,6 +80,8 @@
 
     <script>
         let currentTab = ''; let subMode = 'single'; let selectedArea = null;
+        // Étiquettes prêtes à imprimer : [{ dataUrl, innerHTML }]
+        let labelsToPrint = [];
         const areaList = [1, 2, 3, 4, 5, 10, 11, 12, 13, 21, 22, 23];
         const forms = {
             emplacement: {
@@ -90,6 +95,17 @@
             badge: `<div class="field" style="margin-bottom:20px;"><label>Nom Opérateur</label><input type="text" id="b_name"></div><div class="field"><label>N° Badge (4 chiffres)</label><input type="number" id="b_id" maxlength="4"></div>`,
             etoile: `<div class="field"><label>Numéro ou texte (Points)</label><input type="text" id="star_code" placeholder="ex: 5522051"></div>`
         };
+
+        function escapeHtml(s) {
+            return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        // Génère un code via bwip-js sur canvas temporaire → PNG data URL (indispensable pour l'impression)
+        function renderCodeToPng(opts) {
+            const canvas = document.createElement('canvas');
+            bwipjs.toCanvas(canvas, opts);
+            return canvas.toDataURL('image/png');
+        }
 
         function toggleDarkMode() { document.body.classList.toggle('dark-mode'); }
         function setupAreaGrid() {
@@ -116,10 +132,12 @@
             document.getElementById('form-container').innerHTML = (currentTab === 'emplacement' || currentTab === 'allee') ? forms[currentTab][mode] : forms[currentTab];
             document.querySelectorAll('#form-container input').forEach(input => input.addEventListener('keyup', checkAutoGenerate));
             document.getElementById('print-zone').innerHTML = ''; document.getElementById('btnPrint').style.display = 'none';
+            document.getElementById('printHint').style.display = 'none';
+            labelsToPrint = [];
         }
         function checkAutoGenerate() {
             const inputs = Array.from(document.querySelectorAll('#form-container input'));
-            const allFilled = (currentTab === 'badge' || currentTab === 'etoile') ? inputs.every(i => i.value.trim() !== "") : inputs.every(i => i.value.trim() !== "");
+            const allFilled = inputs.every(i => i.value.trim() !== "");
             const areaOk = (currentTab === 'emplacement' || currentTab === 'allee') ? selectedArea !== null : true;
             if (allFilled && areaOk) generate();
         }
@@ -132,8 +150,19 @@
             return (10 - (sum % 10)) % 10;
         }
 
+        // Ajoute une étiquette : génère le PNG puis l'affiche en aperçu (img, pas canvas)
+        function addLabel(dataUrl, innerHTML) {
+            labelsToPrint.push({ dataUrl: dataUrl, innerHTML: innerHTML });
+            const pz = document.getElementById('print-zone');
+            const div = document.createElement('div');
+            div.className = 'label-style';
+            div.innerHTML = `<div class="barcode-box"><img src="${dataUrl}" alt=""></div>${innerHTML}`;
+            pz.appendChild(div);
+        }
+
         async function generate() {
             const pz = document.getElementById('print-zone'); pz.innerHTML = '';
+            labelsToPrint = [];
             try {
                 if (currentTab === 'emplacement') {
                     let tasks = [];
@@ -146,10 +175,10 @@
                     for (let i=0; i < tasks.length; i++) {
                         let t = tasks[i];
                         let code = parseInt((t.z == '0' ? '2030' : '21' + ('0' + t.z).slice(-2)) + '00000000') + (parseInt(t.a) * 1000000) + (t.etg.charCodeAt(0)-64)*10000 + (parseInt(t.niv)*100) + (t.pl.charCodeAt(0)-64);
-                        let div = document.createElement('div'); div.className = 'label-style';
-                        div.innerHTML = `<div class="barcode-box" style="height:0.6in;"><canvas id="c-e-${i}"></canvas></div><div style="font-weight:800; font-size:18pt;">${t.z}-${t.a}${t.etg}${t.niv}${t.pl}</div>`;
-                        pz.appendChild(div);
-                        bwipjs.toCanvas(`c-e-${i}`, { bcid: 'datamatrix', text: code.toString(), scale: 10, padding: 4, datamatrixsize: '18x18' });
+                        // Logique métier identique, rendu PNG
+                        let dataUrl = renderCodeToPng({ bcid: 'datamatrix', text: code.toString(), scale: 10, padding: 4, datamatrixsize: '18x18' });
+                        let inner = `<div style="font-weight:800; font-size:18pt;">${escapeHtml(t.z)}-${escapeHtml(t.a)}${escapeHtml(t.etg)}${escapeHtml(t.niv)}${escapeHtml(t.pl)}</div>`;
+                        addLabel(dataUrl, inner);
                     }
                 } else if (currentTab === 'allee') {
                     let list = [];
@@ -162,29 +191,126 @@
                         let t = list[i]; const aF = t.a.padStart(2, '0'), zF = t.z.toString().padStart(2, '0');
                         const configs = [{ id: `${i}AZ`, text: `20330000${zF}${aF}`, t: `Area ${t.z} Room ${t.a}`, d: 'A ➔ Z' }, { id: `${i}ZA`, text: `20330100${zF}${aF}`, t: `Area ${t.z} Room ${t.a}`, d: 'Z ➔ A' }];
                         configs.forEach(conf => {
-                            let div = document.createElement('div'); div.className = 'label-style';
-                            div.innerHTML = `<div class="txt-row1">${conf.t}</div><div class="txt-row2">${conf.d}</div><div class="barcode-box"><canvas id="c-a-${conf.id}"></canvas></div>`;
-                            pz.appendChild(div);
-                            bwipjs.toCanvas(`c-a-${conf.id}`, { bcid:'ean13', text:conf.text, scale:1.8, height:10 });
+                            // EAN13 : scale monté à 4 pour une impression nette (1.8 = flou)
+                            let dataUrl = renderCodeToPng({ bcid:'ean13', text:conf.text, scale:4, height:10 });
+                            let inner = `<div class="txt-row1">${escapeHtml(conf.t)}</div><div class="txt-row2">${escapeHtml(conf.d)}</div>`;
+                            addLabel(dataUrl, inner);
                         });
                     }
                 } else if (currentTab === 'badge') {
                     const id = document.getElementById('b_id').value, name = document.getElementById('b_name').value;
                     const base = "20320000" + id.toString().padStart(4, '0');
-                    let div = document.createElement('div'); div.className = 'label-style';
-                    div.innerHTML = `<div style="font-size:14pt; border-bottom:1px solid #000; width:95%; height:0.4in; display:flex; align-items:center; justify-content:center; font-weight:bold; text-transform:uppercase;">${name || id}</div><div class="barcode-box"><canvas id="c-b"></canvas></div>`;
-                    pz.appendChild(div);
-                    bwipjs.toCanvas('c-b', { bcid:'ean13', text:base, scale:1.8, height:12 });
+                    // EAN13 : scale monté à 4 pour une impression nette (1.8 = flou)
+                    let dataUrl = renderCodeToPng({ bcid:'ean13', text:base, scale:4, height:12 });
+                    let inner = `<div style="font-size:14pt; border-bottom:1px solid #000; width:95%; height:0.4in; display:flex; align-items:center; justify-content:center; font-weight:bold; text-transform:uppercase;">${escapeHtml(name || id)}</div>`;
+                    addLabel(dataUrl, inner);
                 } else if (currentTab === 'etoile') {
                     // --- LOGIQUE DATA MATRIX POINTS (ANCIEN ONGLET ÉTOILE) ---
                     const sc = document.getElementById('star_code').value;
-                    let div = document.createElement('div'); div.className = 'label-style';
-                    div.innerHTML = `<div class="barcode-box"><canvas id="c-s"></canvas></div><div class="res-text">${sc}</div>`;
-                    pz.appendChild(div);
-                    bwipjs.toCanvas('c-s', { bcid:'datamatrix', text:sc, scale:8, padding:2 });
+                    let dataUrl = renderCodeToPng({ bcid:'datamatrix', text:sc, scale:8, padding:2 });
+                    let inner = `<div class="res-text">${escapeHtml(sc)}</div>`;
+                    addLabel(dataUrl, inner);
                 }
                 document.getElementById('btnPrint').style.display = 'block';
+                document.getElementById('printHint').style.display = 'block';
             } catch (e) { console.error(e); }
+        }
+
+        // Impression via iframe caché hors-écran : page propre, sans le shell de l'app.
+        // (width:0 empêche le rendu → top:-1000px avec vraies dimensions)
+        function printLabels() {
+            if (!labelsToPrint.length) { alert('Générez d\'abord les étiquettes'); return; }
+
+            const labelsHtml = labelsToPrint.map(l => `
+    <div class="label">
+        <div class="barcode-box"><img src="${l.dataUrl}" alt=""></div>
+        ${l.innerHTML}
+    </div>`).join('');
+
+            const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Impression étiquettes</title>
+<style>
+    @page { size: 1.5in 1in; margin: 0; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { background: white; }
+    .label {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 1.5in; height: 1in;
+        padding: 0;
+        overflow: hidden;
+        page-break-after: always;
+    }
+    .label:last-child { page-break-after: auto; }
+    .label .barcode-box {
+        width: 100%;
+        display: flex; justify-content: center; align-items: center;
+        overflow: hidden;
+        flex-grow: 1;
+    }
+    .label img {
+        max-height: 0.55in; max-width: 92%;
+        image-rendering: pixelated;
+    }
+    .label .txt-row1 { font-size: 9pt; font-weight: bold; margin-bottom: 1px; font-family: Arial, sans-serif; color: #000; }
+    .label .txt-row2 { font-size: 11pt; font-weight: bold; color: #444; margin-bottom: 3px; font-family: Arial, sans-serif; }
+    .label .res-text {
+        font-weight: 800;
+        font-size: 7pt;
+        margin-top: 5px;
+        letter-spacing: 1px;
+        font-family: 'Courier New', monospace;
+        color: #000;
+        text-align: center;
+        word-break: break-all;
+    }
+    .label [style*="border-bottom"] {
+        font-size: 14pt;
+        font-weight: bold;
+        text-transform: uppercase;
+        color: #000;
+        font-family: Arial, sans-serif;
+    }
+    .label [style*="font-size:18pt"] {
+        font-size: 18pt;
+        font-weight: 800;
+        color: #000;
+        font-family: Arial, sans-serif;
+    }
+    @media print {
+        html, body { width: 1.5in !important; height: auto !important; margin: 0 !important; padding: 0 !important; }
+    }
+</style>
+</head>
+<body>${labelsHtml}
+</body>
+</html>`;
+
+            // Iframe caché hors-écran (jamais width:0 → page blanche à l'impression)
+            let iframe = document.getElementById('print-frame');
+            if (iframe) iframe.remove();
+            iframe = document.createElement('iframe');
+            iframe.id = 'print-frame';
+            iframe.style.cssText = 'position:fixed;top:-1000px;left:0;width:200mm;height:100mm;border:none;';
+            document.body.appendChild(iframe);
+
+            const doc = iframe.contentDocument || iframe.contentWindow.document;
+            doc.open();
+            doc.write(html);
+            doc.close();
+
+            // Impression après chargement des images
+            iframe.onload = () => {
+                setTimeout(() => {
+                    iframe.contentWindow.print();
+                    setTimeout(() => iframe.remove(), 2000);
+                }, 500);
+            };
         }
         window.onload = () => { switchTab('emplacement', document.getElementById('btn-emp')); };
     </script>
