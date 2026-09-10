@@ -11,7 +11,7 @@
         body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 90px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; transition: 0.3s; overflow-x: hidden; }
         nav { width: 100%; background: var(--card); padding: 10px 0; display: flex; align-items: center; justify-content: center; border-bottom: 0.5px solid #d1d1d6; position: sticky; top: 0; z-index: 100; }
         .nav-wrapper { width: 95%; max-width: 1200px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-        .logo-img { height: 40px; width: auto; border-radius: 6px; } 
+        .logo-img { height: 40px; width: auto; border-radius: 6px; }
         .nav-container { display: flex; background: var(--nav-bg); padding: 4px; border-radius: 10px; gap: 2px; flex: 1; overflow-x: auto; }
         .nav-item { flex: 1; text-align: center; cursor: pointer; font-weight: 700; font-size: 10px; padding: 10px 8px; border-radius: 8px; text-transform: uppercase; color: var(--sub); white-space: nowrap; min-width: 80px; }
         .nav-item.active { background: var(--card); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
@@ -29,6 +29,7 @@
         input { padding: 14px; border: 1.5px solid var(--sub); border-radius: 10px; font-size: 16px; background: var(--bg); color: var(--text); width: 100%; box-sizing: border-box; }
         .btn-print { background: #34c759; color: #fff; display: none; margin-top: 15px; width: 100%; padding: 18px; border-radius: 14px; border: none; font-weight: 800; font-size: 16px; text-transform: uppercase; }
         .print-hint { display: none; text-align: center; font-size: 12px; color: var(--sub); margin-top: 10px; font-weight: 600; }
+        .mode-info { text-align: center; font-size: 11px; color: var(--sub); margin-top: 12px; font-weight: 600; }
         #print-zone { display: grid; gap: 30px; justify-content: center; width: 100%; margin: 40px auto; padding-bottom: 50px; }
         
         /* Aperçu écran : vraie taille (pas de transform scale), bordure pointillée */
@@ -72,6 +73,7 @@
             <div id="form-container"></div>
             <button id="btnPrint" class="btn-print" onclick="printLabels()">IMPRIMER</button>
             <p class="print-hint" id="printHint">⚠️ Dialogue d'impression : Marges = <b>Aucune</b> | Échelle = <b>100%</b></p>
+            <p class="mode-info" id="modeInfo"></p>
             <button onclick="location.reload()" style="background:none; color:var(--sub); border:none; width:100%; margin-top:15px; font-size:12px; cursor:pointer; font-weight: 600;">Réinitialiser</button>
         </div>
     </div>
@@ -80,7 +82,7 @@
 
     <script>
         let currentTab = ''; let subMode = 'single'; let selectedArea = null;
-        // Étiquettes prêtes à imprimer : [{ dataUrl, innerHTML }]
+        // Étiquettes prêtes à imprimer : [{ dataUrl, innerHTML, zpl }]
         let labelsToPrint = [];
         const areaList = [1, 2, 3, 4, 5, 10, 11, 12, 13, 21, 22, 23];
         const forms = {
@@ -105,6 +107,109 @@
             const canvas = document.createElement('canvas');
             bwipjs.toCanvas(canvas, opts);
             return canvas.toDataURL('image/png');
+        }
+
+        // Data Matrix rendu à la taille exacte de l'imprimante : 1 pixel = 1 dot (203 dpi),
+        // module entier (6 dots = 0,75 mm) + zone de silence de `quiet` modules.
+        // On part de la matrice de modules de bwip-js (raw) : aucun rééchantillonnage à l'impression.
+        function dmPngData(text, moduleDots, quiet) {
+            const raw = bwipjs.raw({ bcid: 'datamatrix', text: String(text) })[0];
+            const cols = raw.pixx, rows = raw.pixy, pix = raw.pixs;
+            const side = (Math.max(cols, rows) + 2 * quiet) * moduleDots;
+            const cv = document.createElement('canvas');
+            cv.width = side; cv.height = side;
+            const ctx = cv.getContext('2d');
+            ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, side, side);
+            ctx.fillStyle = '#000';
+            const off = quiet * moduleDots;
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    if (pix[y * cols + x]) ctx.fillRect(off + x * moduleDots, off + y * moduleDots, moduleDots, moduleDots);
+                }
+            }
+            return { dataUrl: cv.toDataURL('image/png'), dots: side };
+        }
+
+        // Taille physique de l'image à l'impression : `dots` pixels imprimante à 203 dpi
+        function imgSizeStyle(dots) {
+            if (!dots) return '';
+            const inch = (dots / PRINTER.dpi).toFixed(4);
+            return ` style="width:${inch}in;height:${inch}in;max-width:none;max-height:none;"`;
+        }
+
+        /* =====================================================================
+           IMPRESSION — deux chemins
+           1) DIRECTE : Zebra Browser Print installé sur le poste → la page envoie
+              le ZPL natif à l'imprimante LP 2824 Plus (informations de sécurité :
+              voir IMPRESSION-DIRECTE.md). Silencieux, net au dot près, pas de dialogue.
+           2) NAVIGATEUR : repli automatique sur l'impression actuelle (iframe +
+              @page 1.5in x 1in). Devient silencieux si Chrome est lancé avec
+              --kiosk-printing (raccourci fourni).
+           ===================================================================== */
+        const PRINTER = {
+            dpi: 203,                 // Zebra LP 2824 Plus : 203 dpi = 8 dots/mm
+            labelW: 304,              // 1.5 in en dots
+            labelH: 203,              // 1 in en dots
+            dmModule: 6,              // module Data Matrix : 6 dots = 0,75 mm
+            dmQuality: 200,           // ECC 200 (obligatoire pour les douchettes actuelles)
+            dmSize: [18, 18],         // symbole forcé 18x18 (0,0 = taille automatique)
+            eanModule: 3,             // barre fine EAN13 : 3 dots = 0,375 mm
+            useLabelLength: false,    // true = ajoute ^LL203 (recale la longueur d'étiquette)
+            utf8: true,               // false = accents remplacés (si l'imprimante affiche des carrés)
+            sdkFiles: ['BrowserPrint-3.1.250.min.js', 'BrowserPrint-3.0.216.min.js', 'BrowserPrint-1.0.4.min.js', 'BrowserPrint.min.js', 'browserprint.min.js'],
+            agentUrls: ['https://localhost:9101/available', 'http://localhost:9101/available']
+        };
+
+        // Texte destiné à un champ ^FD : on neutralise les caractères de contrôle ZPL
+        function zplText(s, upper) {
+            let t = String(s == null ? '' : s).replace(/[\^~\\]/g, ' ').replace(/\s+/g, ' ').trim();
+            if (upper) t = t.toUpperCase();
+            if (!PRINTER.utf8) t = t.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            return t;
+        }
+
+        function zplHeader() {
+            let s = '^XA\n';
+            if (PRINTER.utf8) s += '^CI28\n';
+            s += '^PW' + PRINTER.labelW + '\n';
+            if (PRINTER.useLabelLength) s += '^LL' + PRINTER.labelH + '\n';
+            return s;
+        }
+
+        // Emplacement : Data Matrix + numéro en gros
+        function zplEmplacement(code, texte) {
+            return zplHeader()
+                + '^FO98,12^BXN,' + PRINTER.dmModule + ',' + PRINTER.dmQuality + ',' + PRINTER.dmSize[0] + ',' + PRINTER.dmSize[1] + ',6^FD' + code + '^FS\n'
+                + '^FO0,128^A0N,52,42^FB' + PRINTER.labelW + ',1,0,C,0^FD' + zplText(texte, true) + '^FS\n'
+                + '^XZ\n';
+        }
+
+        // Étoile / Points : Data Matrix + texte en petit
+        function zplEtoile(code) {
+            return zplHeader()
+                + '^FO110,14^BXN,' + PRINTER.dmModule + ',' + PRINTER.dmQuality + ',0,0,6^FD' + zplText(code) + '^FS\n'
+                + '^FO0,150^A0N,34,28^FB' + PRINTER.labelW + ',1,0,C,0^FD' + zplText(code) + '^FS\n'
+                + '^XZ\n';
+        }
+
+        // Allée : EAN13 (barres) + Area/Room + sens de lecture
+        function zplAllee(ean, areaRoom, sens) {
+            return zplHeader()
+                + '^BY' + PRINTER.eanModule + ',2.0,70\n'
+                + '^FO9,15^BEN,70,N,N^FD' + ean + '^FS\n'
+                + '^FO0,105^A0N,30,26^FB' + PRINTER.labelW + ',1,0,C,0^FD' + zplText(areaRoom) + '^FS\n'
+                + '^FO0,140^A0N,34,30^FB' + PRINTER.labelW + ',1,0,C,0^FD' + zplText(sens) + '^FS\n'
+                + '^XZ\n';
+        }
+
+        // Badge : EAN13 + nom de l'opérateur souligné
+        function zplBadge(ean, nom) {
+            return zplHeader()
+                + '^BY' + PRINTER.eanModule + ',2.0,80\n'
+                + '^FO9,15^BEN,80,N,N^FD' + ean + '^FS\n'
+                + '^FO0,118^A0N,40,34^FB' + PRINTER.labelW + ',1,0,C,0^FD' + zplText(nom, true) + '^FS\n'
+                + '^FO8,155^GB289,2,2^FS\n'
+                + '^XZ\n';
         }
 
         function toggleDarkMode() { document.body.classList.toggle('dark-mode'); }
@@ -151,12 +256,12 @@
         }
 
         // Ajoute une étiquette : génère le PNG puis l'affiche en aperçu (img, pas canvas)
-        function addLabel(dataUrl, innerHTML) {
-            labelsToPrint.push({ dataUrl: dataUrl, innerHTML: innerHTML });
+        function addLabel(dataUrl, innerHTML, zpl, dots) {
+            labelsToPrint.push({ dataUrl: dataUrl, innerHTML: innerHTML, zpl: zpl, dots: dots || 0 });
             const pz = document.getElementById('print-zone');
             const div = document.createElement('div');
             div.className = 'label-style';
-            div.innerHTML = `<div class="barcode-box"><img src="${dataUrl}" alt=""></div>${innerHTML}`;
+            div.innerHTML = `<div class="barcode-box"><img src="${dataUrl}" alt=""${imgSizeStyle(dots)}></div>${innerHTML}`;
             pz.appendChild(div);
         }
 
@@ -175,10 +280,11 @@
                     for (let i=0; i < tasks.length; i++) {
                         let t = tasks[i];
                         let code = parseInt((t.z == '0' ? '2030' : '21' + ('0' + t.z).slice(-2)) + '00000000') + (parseInt(t.a) * 1000000) + (t.etg.charCodeAt(0)-64)*10000 + (parseInt(t.niv)*100) + (t.pl.charCodeAt(0)-64);
-                        // Logique métier identique, rendu PNG
-                        let dataUrl = renderCodeToPng({ bcid: 'datamatrix', text: code.toString(), scale: 10, padding: 4, datamatrixsize: '18x18' });
-                        let inner = `<div style="font-weight:800; font-size:18pt;">${escapeHtml(t.z)}-${escapeHtml(t.a)}${escapeHtml(t.etg)}${escapeHtml(t.niv)}${escapeHtml(t.pl)}</div>`;
-                        addLabel(dataUrl, inner);
+                        // Data Matrix rendu au dot près (1 pixel = 1 dot imprimante)
+                        let dm = dmPngData(code.toString(), 6, 2);
+                        let texte = `${t.z}-${t.a}${t.etg}${t.niv}${t.pl}`;
+                        let inner = `<div style="font-weight:800; font-size:18pt;">${escapeHtml(texte)}</div>`;
+                        addLabel(dm.dataUrl, inner, zplEmplacement(code.toString(), texte), dm.dots);
                     }
                 } else if (currentTab === 'allee') {
                     let list = [];
@@ -194,7 +300,7 @@
                             // EAN13 : scale monté à 4 pour une impression nette (1.8 = flou)
                             let dataUrl = renderCodeToPng({ bcid:'ean13', text:conf.text, scale:4, height:10 });
                             let inner = `<div class="txt-row1">${escapeHtml(conf.t)}</div><div class="txt-row2">${escapeHtml(conf.d)}</div>`;
-                            addLabel(dataUrl, inner);
+                            addLabel(dataUrl, inner, zplAllee(conf.text, conf.t, conf.d.replace('➔', '->')), 0);
                         });
                     }
                 } else if (currentTab === 'badge') {
@@ -203,27 +309,105 @@
                     // EAN13 : scale monté à 4 pour une impression nette (1.8 = flou)
                     let dataUrl = renderCodeToPng({ bcid:'ean13', text:base, scale:4, height:12 });
                     let inner = `<div style="font-size:14pt; border-bottom:1px solid #000; width:95%; height:0.4in; display:flex; align-items:center; justify-content:center; font-weight:bold; text-transform:uppercase;">${escapeHtml(name || id)}</div>`;
-                    addLabel(dataUrl, inner);
+                    addLabel(dataUrl, inner, zplBadge(base, name || id), 0);
                 } else if (currentTab === 'etoile') {
                     // --- LOGIQUE DATA MATRIX POINTS (ANCIEN ONGLET ÉTOILE) ---
                     const sc = document.getElementById('star_code').value;
-                    let dataUrl = renderCodeToPng({ bcid:'datamatrix', text:sc, scale:8, padding:2 });
+                    let dm = dmPngData(sc, 6, 2);
                     let inner = `<div class="res-text">${escapeHtml(sc)}</div>`;
-                    addLabel(dataUrl, inner);
+                    addLabel(dm.dataUrl, inner, zplEtoile(sc), dm.dots);
                 }
                 document.getElementById('btnPrint').style.display = 'block';
                 document.getElementById('printHint').style.display = 'block';
+                updateModeInfo();
             } catch (e) { console.error(e); }
         }
 
-        // Impression via iframe caché hors-écran : page propre, sans le shell de l'app.
-        // (width:0 empêche le rendu → top:-1000px avec vraies dimensions)
-        function printLabels() {
-            if (!labelsToPrint.length) { alert('Générez d\'abord les étiquettes'); return; }
+        /* ===================== Impression directe (Zebra) ===================== */
 
+        let bpState = null;          // null = pas encore testé, true/false ensuite
+        let bpProbe = null;          // promesse partagée
+
+        function updateModeInfo() {
+            const el = document.getElementById('modeInfo');
+            if (!el) return;
+            if (bpState === true) el.innerText = 'Impression directe : imprimante Zebra (silencieux)';
+            else if (bpState === false) el.innerText = 'Impression navigateur — Browser Print non détecté (Marges : Aucune, Échelle : 100%)';
+            else el.innerText = 'Détection de l\'imprimante…';
+        }
+
+        function probeUrl(url) {
+            return new Promise(resolve => {
+                const ctrl = new AbortController();
+                const t = setTimeout(() => { ctrl.abort(); resolve(false); }, 1200);
+                fetch(url, { method: 'GET', cache: 'no-store', signal: ctrl.signal })
+                    .then(() => { clearTimeout(t); resolve(true); })
+                    .catch(() => { clearTimeout(t); resolve(false); });
+            });
+        }
+
+        function loadScript(src) {
+            return new Promise(resolve => {
+                const s = document.createElement('script');
+                s.src = src;
+                s.onload = () => resolve(true);
+                s.onerror = () => resolve(false);
+                document.head.appendChild(s);
+            });
+        }
+
+        // Cherche le SDK Browser Print : d'abord local sur le poste, sinon à côté de la page
+        async function loadBrowserPrintSdk() {
+            if (window.BrowserPrint) return true;
+            const bases = window.BrowserPrintSdkBase ? [window.BrowserPrintSdkBase] : [''];
+            for (const b of bases) {
+                for (const f of PRINTER.sdkFiles) {
+                    await loadScript(b + f);
+                    if (window.BrowserPrint) return true;
+                }
+            }
+            return !!window.BrowserPrint;
+        }
+
+        function bpReady() {
+            if (bpProbe) return bpProbe;
+            bpProbe = (async () => {
+                let reachable = false;
+                for (const url of PRINTER.agentUrls) {
+                    if (await probeUrl(url)) { reachable = true; break; }
+                }
+                if (!reachable) { bpState = false; return false; }
+                const hasSdk = await loadBrowserPrintSdk();
+                bpState = hasSdk;
+                return hasSdk;
+            })();
+            return bpProbe;
+        }
+
+        function bpGetPrinter() {
+            return new Promise((resolve, reject) => {
+                BrowserPrint.getDefaultDevice('printer', d => d ? resolve(d) : reject(new Error('aucune imprimante par défaut')), e => reject(new Error(String(e))));
+            });
+        }
+
+        async function directPrint(zpl) {
+            if (!await bpReady()) return false;
+            try {
+                const printer = await bpGetPrinter();
+                await new Promise((resolve, reject) => printer.send(zpl, resolve, e => reject(new Error(String(e)))));
+                return true;
+            } catch (e) {
+                alert('Impression directe impossible : ' + (e.message || e) + '\n\nVérifiez que Browser Print est lancé et que l\'imprimante Zebra est allumée, puis réessayez.');
+                return 'error';
+            }
+        }
+
+        /* ===================== Impression navigateur (repli) ===================== */
+
+        function browserPrint() {
             const labelsHtml = labelsToPrint.map(l => `
     <div class="label">
-        <div class="barcode-box"><img src="${l.dataUrl}" alt=""></div>
+        <div class="barcode-box"><img src="${l.dataUrl}" alt=""${imgSizeStyle(l.dots)}></div>
         ${l.innerHTML}
     </div>`).join('');
 
@@ -312,7 +496,21 @@
                 }, 500);
             };
         }
-        window.onload = () => { switchTab('emplacement', document.getElementById('btn-emp')); };
+
+        async function printLabels() {
+            if (!labelsToPrint.length) { alert('Générez d\'abord les étiquettes'); return; }
+
+            const zpl = labelsToPrint.map(l => l.zpl).filter(Boolean).join('');
+            if (zpl) {
+                const res = await directPrint(zpl);
+                if (res === true) return;          // envoyé à l'imprimante, aucun dialogue
+                if (res === 'error') return;       // erreur signalée : on ne double pas l'impression
+            }
+            updateModeInfo();
+            browserPrint();
+        }
+
+        window.onload = () => { switchTab('emplacement', document.getElementById('btn-emp')); updateModeInfo(); bpReady().then(updateModeInfo); };
     </script>
 </body>
 </html>
