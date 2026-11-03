@@ -3,115 +3,1026 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Générateur de codes</title>
+    <title>Npqrcode — Générateur d'étiquettes logistiques</title>
     <script src="https://cdn.jsdelivr.net/npm/bwip-js@3.0.4/dist/bwip-js-min.js"></script>
     <style>
-        :root { --primary: #000; --accent: #2563eb; --bg: #f2f2f7; --card: #fff; --sub: #8e8e93; --text: #000; --nav-bg: #e3e3e6; }
-        body.dark-mode { --bg: #1c1c1e; --card: #2c2c2e; --sub: #aeaeb2; --text: #ffffff; --nav-bg: #3a3a3c; --primary: #ffffff; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 90px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; transition: 0.3s; overflow-x: hidden; }
-        nav { width: 100%; background: var(--card); padding: 10px 0; display: flex; align-items: center; justify-content: center; border-bottom: 0.5px solid #d1d1d6; position: sticky; top: 0; z-index: 100; }
-        .nav-wrapper { width: 95%; max-width: 1200px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-        .logo-img { height: 40px; width: auto; border-radius: 6px; }
-        .nav-container { display: flex; background: var(--nav-bg); padding: 4px; border-radius: 10px; gap: 2px; flex: 1; overflow-x: auto; }
-        .nav-item { flex: 1; text-align: center; cursor: pointer; font-weight: 700; font-size: 10px; padding: 10px 8px; border-radius: 8px; text-transform: uppercase; color: var(--sub); white-space: nowrap; min-width: 80px; }
-        .nav-item.active { background: var(--card); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .container { width: 92%; max-width: 580px; margin-top: 20px; }
-        .card { background: var(--card); border-radius: 20px; padding: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .mode-selector { display: flex; background: var(--bg); padding: 4px; border-radius: 10px; margin-bottom: 20px; gap: 4px; }
-        .mode-btn { flex: 1; border: none; padding: 10px; font-size: 12px; font-weight: 800; border-radius: 8px; cursor: pointer; background: none; color: var(--sub); text-transform: uppercase; }
-        .mode-btn.active { background: var(--card); color: var(--text); box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-        .area-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 20px; }
-        .area-btn { background: var(--bg); border: 1px solid var(--sub); color: var(--text); padding: 12px 5px; border-radius: 8px; font-weight: 700; font-size: 11px; cursor: pointer; text-align: center; }
-        .area-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-        .grid-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-        .field { display: flex; flex-direction: column; gap: 6px; }
-        label { font-size: 10px; font-weight: 800; color: var(--sub); text-transform: uppercase; }
-        input { padding: 14px; border: 1.5px solid var(--sub); border-radius: 10px; font-size: 16px; background: var(--bg); color: var(--text); width: 100%; box-sizing: border-box; }
-        .btn-print { background: #34c759; color: #fff; display: none; margin-top: 15px; width: 100%; padding: 18px; border-radius: 14px; border: none; font-weight: 800; font-size: 16px; text-transform: uppercase; }
-        .print-hint { display: none; text-align: center; font-size: 12px; color: var(--sub); margin-top: 10px; font-weight: 600; }
-        .mode-info { text-align: center; font-size: 11px; color: var(--sub); margin-top: 12px; font-weight: 600; }
-        #print-zone { display: grid; gap: 30px; justify-content: center; width: 100%; margin: 40px auto; padding-bottom: 50px; }
-        
-        /* Aperçu écran : vraie taille (pas de transform scale), bordure pointillée */
-        .label-style { display: flex; width: 1.5in; height: 1in; background: #fff !important; border: 1px dashed #999; flex-direction: column; justify-content: center; align-items: center; position: relative; color: #000 !important; box-shadow: 0 4px 15px rgba(0,0,0,0.1); overflow: hidden; page-break-after: always; }
-        .txt-row1 { font-size: 9pt; font-weight: bold; margin-bottom: 1px; }
-        .txt-row2 { font-size: 11pt; font-weight: bold; color: #444; margin-bottom: 3px; }
-        .barcode-box { width: 100%; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-        
-        /* Chiffres épurés pour l'onglet Étoile */
-        .res-text { font-weight: 800; font-size: 7pt; margin-top: 5px; letter-spacing: 1px; }
+        :root {
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --surface-hover: #f1f5f9;
+            --card: #ffffff;
+            --card-border: #e2e8f0;
+            --text: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --primary: #0f172a;
+            --accent: #2563eb;
+            --accent-light: #eff6ff;
+            --accent-border: #bfdbfe;
+            --success: #10b981;
+            --success-light: #ecfdf5;
+            --success-border: #a7f3d0;
+            --warning: #f59e0b;
+            --warning-light: #fffbeb;
+            --warning-border: #fde68a;
+            --input-bg: #f8fafc;
+            --input-border: #cbd5e1;
+            --input-focus: #2563eb;
+            --nav-bg: #e2e8f0;
+            --nav-item-active: #ffffff;
+            --grid-dots: radial-gradient(#cbd5e1 1px, transparent 1px);
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-full: 9999px;
+            --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', Menlo, Consolas, monospace;
+        }
 
-        /* Toujours des <img> PNG (jamais de canvas) pour un rendu fiable à l'impression */
+        body.dark-mode {
+            --bg: #09090b;
+            --surface: #141417;
+            --surface-hover: #1c1c21;
+            --card: #141417;
+            --card-border: #27272a;
+            --text: #fafafa;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --primary: #ffffff;
+            --accent: #3b82f6;
+            --accent-light: #172554;
+            --accent-border: #1e40af;
+            --success: #10b981;
+            --success-light: #064e3b;
+            --success-border: #065f46;
+            --warning: #f59e0b;
+            --warning-light: #451a03;
+            --warning-border: #78350f;
+            --input-bg: #18181b;
+            --input-border: #3f3f46;
+            --input-focus: #3b82f6;
+            --nav-bg: #27272a;
+            --nav-item-active: #141417;
+            --grid-dots: radial-gradient(#27272a 1px, transparent 1px);
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.6);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background 0.25s ease, color 0.25s ease;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Top Navigation Header */
+        header.app-header {
+            width: 100%;
+            background: var(--surface);
+            border-bottom: 1px solid var(--card-border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .header-content {
+            max-width: 1380px;
+            margin: 0 auto;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .brand-zone {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-logo {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-weight: 900;
+            font-size: 16px;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+        }
+
+        .brand-title {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand-title h1 {
+            font-size: 17px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+            color: var(--text);
+        }
+
+        .brand-subtitle {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .brand-tag {
+            font-size: 9px;
+            background: var(--accent-light);
+            color: var(--accent);
+            border: 1px solid var(--accent-border);
+            padding: 1px 6px;
+            border-radius: var(--radius-full);
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Status Badge */
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background: var(--surface-hover);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-full);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-muted);
+        }
+
+        .status-dot.active {
+            background: var(--success);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
+            animation: pulse-dot 2s infinite ease-in-out;
+        }
+
+        .status-dot.warning {
+            background: var(--warning);
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25);
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.15); opacity: 0.8; }
+        }
+
+        .btn-header-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--accent-light);
+            color: var(--accent);
+            border: 1px solid var(--accent-border);
+            padding: 7px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-header-action:hover {
+            filter: brightness(0.95);
+            transform: translateY(-1px);
+        }
+
+        .theme-btn {
+            background: var(--surface-hover);
+            border: 1px solid var(--card-border);
+            color: var(--text);
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .theme-btn:hover {
+            border-color: var(--text-muted);
+            transform: translateY(-1px);
+        }
+
+        /* Nav Tabs Bar */
+        .tabs-bar {
+            width: 100%;
+            background: var(--surface);
+            border-bottom: 1px solid var(--card-border);
+            padding: 6px 24px;
+        }
+
+        .tabs-container {
+            max-width: 1380px;
+            margin: 0 auto;
+            display: flex;
+            background: var(--nav-bg);
+            padding: 4px;
+            border-radius: var(--radius-md);
+            gap: 4px;
+            overflow-x: auto;
+        }
+
+        .nav-item {
+            flex: 1;
+            min-width: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        .nav-item svg {
+            width: 16px;
+            height: 16px;
+            stroke-width: 2;
+            transition: transform 0.2s ease;
+        }
+
+        .nav-item:hover {
+            color: var(--text);
+        }
+
+        .nav-item.active {
+            background: var(--nav-item-active);
+            color: var(--text);
+            box-shadow: var(--shadow-sm);
+            font-weight: 700;
+        }
+
+        .nav-item.active svg {
+            color: var(--accent);
+            transform: scale(1.05);
+        }
+
+        /* Main Workspace Layout (2 columns on desktop) */
+        main.main-layout {
+            max-width: 1380px;
+            width: 100%;
+            margin: 24px auto;
+            padding: 0 24px 60px;
+            display: grid;
+            grid-template-columns: minmax(360px, 440px) 1fr;
+            gap: 28px;
+            align-items: start;
+        }
+
+        /* Left Config Panel */
+        .config-card {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-header-row h2 {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            color: var(--text);
+        }
+
+        /* Submode Switcher (Unique vs Masse) */
+        .mode-selector {
+            display: flex;
+            background: var(--nav-bg);
+            padding: 3px;
+            border-radius: var(--radius-sm);
+            gap: 3px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            border: none;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            border-radius: 6px;
+            cursor: pointer;
+            background: transparent;
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .mode-btn.active {
+            background: var(--card);
+            color: var(--text);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Area Selector Grid */
+        .area-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .section-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .area-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .area-btn {
+            background: var(--surface-hover);
+            border: 1px solid var(--card-border);
+            color: var(--text-secondary);
+            padding: 10px 4px;
+            border-radius: var(--radius-sm);
+            font-weight: 700;
+            font-size: 12px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.15s ease;
+            user-select: none;
+        }
+
+        .area-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--card);
+            transform: translateY(-1px);
+        }
+
+        .area-btn.active {
+            background: var(--accent);
+            color: #ffffff;
+            border-color: var(--accent);
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+        }
+
+        /* Form Inputs */
+        .grid-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .field label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-muted);
+        }
+
+        .field input {
+            padding: 12px 14px;
+            background: var(--input-bg);
+            border: 1.5px solid var(--input-border);
+            border-radius: var(--radius-sm);
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text);
+            width: 100%;
+            transition: all 0.2s ease;
+            font-family: var(--font-mono), sans-serif;
+        }
+
+        .field input:focus {
+            outline: none;
+            border-color: var(--input-focus);
+            background: var(--card);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+
+        /* Actions & Print Button */
+        .actions-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 6px;
+        }
+
+        .btn-print {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #ffffff;
+            width: 100%;
+            padding: 16px;
+            border-radius: var(--radius-md);
+            border: none;
+            font-weight: 800;
+            font-size: 15px;
+            letter-spacing: 0.02em;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-print:hover {
+            filter: brightness(1.05);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+        }
+
+        .btn-print:active {
+            transform: translateY(0);
+        }
+
+        .btn-print svg {
+            width: 20px;
+            height: 20px;
+            stroke-width: 2.2;
+        }
+
+        .print-hint {
+            display: none;
+            padding: 12px 14px;
+            border-radius: var(--radius-sm);
+            background: var(--warning-light);
+            border: 1px solid var(--warning-border);
+            font-size: 12px;
+            color: var(--text);
+            line-height: 1.5;
+            font-weight: 500;
+        }
+
+        .print-hint b {
+            font-weight: 700;
+        }
+
+        .mode-info {
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+            padding: 4px 0;
+        }
+
+        .btn-reset {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px dashed var(--card-border);
+            width: 100%;
+            padding: 10px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-reset:hover {
+            background: var(--surface-hover);
+            color: var(--text);
+            border-style: solid;
+        }
+
+        /* Right Studio Panel (Preview) */
+        .studio-card {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: sticky;
+            top: 130px;
+        }
+
+        .studio-header {
+            padding: 16px 20px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .studio-title-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .studio-title-box h3 {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .counter-badge {
+            background: var(--accent-light);
+            color: var(--accent);
+            border: 1px solid var(--accent-border);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
+        }
+
+        .studio-controls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .zoom-btn {
+            background: var(--surface-hover);
+            border: 1px solid var(--card-border);
+            color: var(--text-secondary);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 5px 9px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .zoom-btn:hover {
+            color: var(--text);
+            border-color: var(--text-muted);
+        }
+
+        .zoom-btn.active {
+            background: var(--accent);
+            color: #ffffff;
+            border-color: var(--accent);
+        }
+
+        /* Studio Canvas */
+        .studio-canvas {
+            min-height: 480px;
+            max-height: 720px;
+            overflow-y: auto;
+            padding: 30px;
+            background-color: var(--bg);
+            background-image: var(--grid-dots);
+            background-size: 18px 18px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        /* Empty state */
+        .empty-preview-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            margin: auto;
+            max-width: 320px;
+            color: var(--text-muted);
+            gap: 12px;
+            padding: 40px 0;
+        }
+
+        .empty-preview-state svg {
+            width: 48px;
+            height: 48px;
+            stroke-width: 1.5;
+            color: var(--text-muted);
+            opacity: 0.6;
+        }
+
+        .empty-preview-state p {
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        /* Print zone container with zoom modes */
+        #print-zone {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            justify-content: center;
+            align-items: flex-start;
+            width: 100%;
+            transition: transform 0.2s ease;
+        }
+
+        /* Label Real Dimensions (1.5in x 1in = 38.1mm x 25.4mm) */
+        .label-style {
+            display: flex;
+            width: 1.5in;
+            height: 1in;
+            background: #ffffff !important;
+            border: 1px dashed #94a3b8;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            color: #000000 !important;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+            border-radius: 4px;
+            overflow: hidden;
+            page-break-after: always;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            flex-shrink: 0;
+        }
+
+        .label-style:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Zoom factors on screen */
+        .zoom-1 .label-style { transform: scale(1); }
+        .zoom-15 .label-style { transform: scale(1.4); margin: 18px 12px; }
+        .zoom-2 .label-style { transform: scale(1.8); margin: 34px 22px; }
+
+        .txt-row1 { font-size: 9pt; font-weight: bold; margin-bottom: 1px; color: #000 !important; font-family: Arial, sans-serif; }
+        .txt-row2 { font-size: 11pt; font-weight: bold; color: #444 !important; margin-bottom: 3px; font-family: Arial, sans-serif; }
+        .barcode-box { width: 100%; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+        .res-text { font-weight: 800; font-size: 7pt; margin-top: 5px; letter-spacing: 1px; font-family: var(--font-mono); color: #000 !important; }
         .barcode-box img { max-height: 0.55in; max-width: 92%; image-rendering: pixelated; }
-        .theme-toggle { position: fixed; bottom: 20px; left: 20px; width: 50px; height: 50px; background: var(--card); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1000; border: 1px solid var(--sub); font-size: 22px; cursor: pointer; }
-        @media (max-width: 600px) { .grid-inputs { grid-template-columns: 1fr; } }
+
+        /* Toast notification */
+        .toast-msg {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #0f172a;
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 12px 20px;
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 10000;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+        }
+
+        .toast-msg.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 960px) {
+            main.main-layout {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                padding: 0 16px 40px;
+            }
+            .studio-card {
+                position: static;
+            }
+            .studio-canvas {
+                min-height: 360px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .header-content {
+                padding: 10px 14px;
+            }
+            .tabs-bar {
+                padding: 6px 14px;
+            }
+            .grid-inputs {
+                grid-template-columns: 1fr;
+            }
+            .brand-subtitle {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <div class="theme-toggle" onclick="toggleDarkMode()">🌓</div>
+    <!-- Header -->
+    <header class="app-header">
+        <div class="header-content">
+            <div class="brand-zone">
+                <div class="brand-logo">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                </div>
+                <div class="brand-title">
+                    <h1>Npqrcode</h1>
+                    <span class="brand-subtitle">Zebra LP 2824 Plus <span class="brand-tag">38 × 25 mm</span></span>
+                </div>
+            </div>
 
-    <nav>
-        <div class="nav-wrapper">
-            <div class="nav-container">
-                <div id="btn-emp" class="nav-item" onclick="switchTab('emplacement', this)">Emplacement</div>
-                <div class="nav-item" onclick="switchTab('allee', this)">Allée</div>
-                <div class="nav-item" onclick="switchTab('badge', this)">Badge</div>
-                <div id="btn-etoile" class="nav-item" onclick="switchTab('etoile', this)">Étoile</div>
+            <div class="header-actions">
+                <!-- Status pill -->
+                <div class="status-pill" id="printerStatusPill" title="Statut de connexion">
+                    <span class="status-dot" id="statusDot"></span>
+                    <span id="printerStatusText">Détection imprimante…</span>
+                </div>
+
+                <!-- WebUSB connect button (Chrome only) -->
+                <button id="btnConnectUsb" class="btn-header-action" onclick="connectUsbPrinter()" style="display:none;" title="Connexion directe par câble USB">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                    <span>Connecter USB</span>
+                </button>
+
+                <!-- Dark mode toggle -->
+                <button class="theme-btn" onclick="toggleDarkMode()" title="Changer le thème">
+                    <svg id="themeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs Bar -->
+    <nav class="tabs-bar">
+        <div class="tabs-container">
+            <div id="btn-emp" class="nav-item active" onclick="switchTab('emplacement', this)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect></svg>
+                <span>Emplacement</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('allee', this)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="17 11 12 6 7 11"></polyline><polyline points="17 18 12 13 7 18"></polyline></svg>
+                <span>Allée</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('badge', this)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                <span>Badge</span>
+            </div>
+            <div id="btn-etoile" class="nav-item" onclick="switchTab('etoile', this)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <span>Étoile</span>
             </div>
         </div>
     </nav>
 
-    <div class="container">
-        <div class="card">
-            <h2 id="tab-title" style="text-align:center;">Emplacement</h2>
-            <div class="mode-selector" id="mode-ui">
-                <button class="mode-btn active" id="mode-single" onclick="setSubMode('single')">Unique</button>
-                <button class="mode-btn" id="mode-mass" onclick="setSubMode('mass')">Masse</button>
+    <!-- Main Workspace (2 columns) -->
+    <main class="main-layout">
+        <!-- Left: Configuration Form -->
+        <section class="config-card">
+            <div class="card-header-row">
+                <h2 id="tab-title">Emplacement</h2>
+                <!-- Submode switcher (Unique / Masse) -->
+                <div class="mode-selector" id="mode-ui">
+                    <button class="mode-btn active" id="mode-single" onclick="setSubMode('single')">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="4" y="4" width="16" height="16" rx="2"></rect></svg>
+                        <span>Unique</span>
+                    </button>
+                    <button class="mode-btn" id="mode-mass" onclick="setSubMode('mass')">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="7" width="16" height="14" rx="2"></rect><path d="M6 3h14a2 2 0 0 1 2 2v12"></path></svg>
+                        <span>Masse</span>
+                    </button>
+                </div>
             </div>
-            <div id="area-selection-zone" style="display:none;"><label style="display:block; margin-bottom:10px;">Choisir l'Area</label><div class="area-grid" id="area-grid-btns"></div></div>
-            <div id="form-container"></div>
-            <button id="btnPrint" class="btn-print" onclick="printLabels()">IMPRIMER</button>
-            <p class="print-hint" id="printHint">⚠️ Dialogue d'impression : Marges = <b>Aucune</b> | Échelle = <b>100%</b></p>
-            <p class="mode-info" id="modeInfo"></p>
-            <button onclick="location.reload()" style="background:none; color:var(--sub); border:none; width:100%; margin-top:15px; font-size:12px; cursor:pointer; font-weight: 600;">Réinitialiser</button>
-        </div>
-    </div>
 
-    <div id="print-zone"></div>
+            <!-- Area Grid -->
+            <div id="area-selection-zone" class="area-section" style="display:none;">
+                <div class="section-label">
+                    <span>Sélectionner la Zone (Area)</span>
+                    <span id="selectedAreaBadge" style="color:var(--accent); font-weight:700;">Aucune</span>
+                </div>
+                <div class="area-grid" id="area-grid-btns"></div>
+            </div>
+
+            <!-- Dynamic Form Container -->
+            <div id="form-container"></div>
+
+            <!-- Actions -->
+            <div class="actions-section">
+                <button id="btnPrint" class="btn-print" onclick="printLabels()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                    <span id="btnPrintText">IMPRIMER</span>
+                </button>
+
+                <div class="print-hint" id="printHint">
+                    ⚠️ <b>Conseil impression navigateur :</b> Réglez le papier sur <b>38 × 25 mm</b> (1,5 × 1″), les Marges sur <b>Aucune</b> et l'Échelle sur <b>100 %</b>.
+                </div>
+
+                <p class="mode-info" id="modeInfo"></p>
+
+                <button class="btn-reset" onclick="resetForm()">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+                    <span>Réinitialiser les champs</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Right: Studio Live Preview -->
+        <section class="studio-card">
+            <div class="studio-header">
+                <div class="studio-title-box">
+                    <h3>Aperçu en direct</h3>
+                    <span class="counter-badge" id="previewCountBadge">0 étiquette</span>
+                </div>
+                <div class="studio-controls">
+                    <span style="font-size:11px; color:var(--text-muted); font-weight:600; margin-right:4px;">Zoom :</span>
+                    <button class="zoom-btn active" onclick="setPreviewZoom('1')">1x (Réel)</button>
+                    <button class="zoom-btn" onclick="setPreviewZoom('15')">1.5x</button>
+                    <button class="zoom-btn" onclick="setPreviewZoom('2')">2x</button>
+                </div>
+            </div>
+
+            <div class="studio-canvas zoom-1" id="studioCanvas">
+                <div id="emptyPreview" class="empty-preview-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="7" y1="8" x2="17" y2="8"></line><line x1="7" y1="12" x2="17" y2="12"></line><line x1="7" y1="16" x2="11" y2="16"></line></svg>
+                    <p>Complétez les champs du formulaire pour générer automatiquement l'aperçu de l'étiquette.</p>
+                </div>
+                <div id="print-zone"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Floating Toast Notification -->
+    <div id="toast" class="toast-msg"></div>
 
     <script>
-        let currentTab = ''; let subMode = 'single'; let selectedArea = null;
-        // Étiquettes prêtes à imprimer : [{ dataUrl, innerHTML, zpl }]
+        let currentTab = '';
+        let subMode = 'single';
+        let selectedArea = null;
         let labelsToPrint = [];
         const areaList = [1, 2, 3, 4, 5, 10, 11, 12, 13, 21, 22, 23];
+
         const forms = {
             emplacement: {
-                single: `<div class="grid-inputs"><div class="field"><label>Allée</label><input type="number" id="a"></div><div class="field"><label>Étagère</label><input type="text" id="etg" maxlength="1" style="text-transform:uppercase;"></div><div class="field"><label>Étage</label><input type="number" id="niv"></div><div class="field"><label>Place</label><input type="text" id="pl" maxlength="1" style="text-transform:uppercase;"></div></div>`,
-                mass: `<div class="grid-inputs"><div class="field" style="grid-column: 1 / -1;"><label>Allée</label><input type="number" id="a"></div><div class="field"><label>Étagère de</label><input type="text" id="etg_start" maxlength="1" style="text-transform:uppercase;"></div><div class="field"><label>à</label><input type="text" id="etg_end" maxlength="1" style="text-transform:uppercase;"></div><div class="field"><label>Nb Étages</label><input type="number" id="niv_max"></div><div class="field"><label>Place de A à...</label><input type="text" id="pl_end" maxlength="1" style="text-transform:uppercase;"></div></div>`
+                single: `<div class="grid-inputs">
+                            <div class="field"><label>Allée</label><input type="number" id="a" placeholder="ex: 12"></div>
+                            <div class="field"><label>Étagère</label><input type="text" id="etg" maxlength="1" style="text-transform:uppercase;" placeholder="ex: A"></div>
+                            <div class="field"><label>Étage</label><input type="number" id="niv" placeholder="ex: 1"></div>
+                            <div class="field"><label>Place</label><input type="text" id="pl" maxlength="1" style="text-transform:uppercase;" placeholder="ex: B"></div>
+                         </div>`,
+                mass: `<div class="grid-inputs">
+                            <div class="field" style="grid-column: 1 / -1;"><label>Allée</label><input type="number" id="a" placeholder="ex: 12"></div>
+                            <div class="field"><label>Étagère de</label><input type="text" id="etg_start" maxlength="1" style="text-transform:uppercase;" placeholder="A"></div>
+                            <div class="field"><label>à</label><input type="text" id="etg_end" maxlength="1" style="text-transform:uppercase;" placeholder="D"></div>
+                            <div class="field"><label>Nb Étages</label><input type="number" id="niv_max" placeholder="ex: 3"></div>
+                            <div class="field"><label>Place de A à...</label><input type="text" id="pl_end" maxlength="1" style="text-transform:uppercase;" placeholder="D"></div>
+                       </div>`
             },
             allee: {
-                single: `<div class="field"><label>Numéro d'allée</label><input type="number" id="a"></div>`,
-                mass: `<div class="grid-inputs"><div class="field"><label>De</label><input type="number" id="a_start"></div><div class="field"><label>À</label><input type="number" id="a_end"></div></div>`
+                single: `<div class="field"><label>Numéro d'allée</label><input type="number" id="a" placeholder="ex: 12"></div>`,
+                mass: `<div class="grid-inputs"><div class="field"><label>De l'allée</label><input type="number" id="a_start" placeholder="ex: 1"></div><div class="field"><label>À l'allée</label><input type="number" id="a_end" placeholder="ex: 10"></div></div>`
             },
-            badge: `<div class="field" style="margin-bottom:20px;"><label>Nom Opérateur</label><input type="text" id="b_name"></div><div class="field"><label>N° Badge (4 chiffres)</label><input type="number" id="b_id" maxlength="4"></div>`,
-            etoile: `<div class="field"><label>Numéro ou texte (Points)</label><input type="text" id="star_code" placeholder="ex: 5522051"></div>`
+            badge: `<div class="field" style="margin-bottom:14px;"><label>Nom de l'Opérateur</label><input type="text" id="b_name" placeholder="ex: DUPONT Jean"></div><div class="field"><label>N° Badge (4 chiffres)</label><input type="number" id="b_id" maxlength="4" placeholder="ex: 1234"></div>`,
+            etoile: `<div class="field"><label>Numéro ou code texte (Points)</label><input type="text" id="star_code" placeholder="ex: 5522051"></div>`
         };
 
         function escapeHtml(s) {
             return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
         }
 
-        // Génère un code via bwip-js sur canvas temporaire → PNG data URL (indispensable pour l'impression)
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3200);
+        }
+
+        function setPreviewZoom(factor) {
+            const canvas = document.getElementById('studioCanvas');
+            canvas.className = 'studio-canvas zoom-' + factor;
+            document.querySelectorAll('.zoom-btn').forEach(b => b.classList.remove('active'));
+            if (event && event.target) event.target.classList.add('active');
+        }
+
+        function resetForm() {
+            setSubMode(subMode);
+            selectedArea = null;
+            document.querySelectorAll('.area-btn').forEach(b => b.classList.remove('active'));
+            const badge = document.getElementById('selectedAreaBadge');
+            if (badge) badge.innerText = 'Aucune';
+            document.getElementById('print-zone').innerHTML = '';
+            document.getElementById('emptyPreview').style.display = 'flex';
+            document.getElementById('previewCountBadge').innerText = '0 étiquette';
+            document.getElementById('btnPrint').style.display = 'none';
+            document.getElementById('printHint').style.display = 'none';
+            labelsToPrint = [];
+        }
+
+        // Mode Sombre / Clair avec mémorisation locale
+        function initTheme() {
+            const saved = localStorage.getItem('npqrcode-theme');
+            if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.body.classList.add('dark-mode');
+                updateThemeIcon(true);
+            } else {
+                updateThemeIcon(false);
+            }
+        }
+
+        function toggleDarkMode() {
+            const isDark = document.body.classList.toggle('dark-mode');
+            localStorage.setItem('npqrcode-theme', isDark ? 'dark' : 'light');
+            updateThemeIcon(isDark);
+        }
+
+        function updateThemeIcon(isDark) {
+            const icon = document.getElementById('themeIcon');
+            if (!icon) return;
+            if (isDark) {
+                icon.innerHTML = `<circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path>`;
+            } else {
+                icon.innerHTML = `<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>`;
+            }
+        }
+
+        // Génère un code via bwip-js sur canvas temporaire -> PNG data URL (indispensable pour l'impression)
         function renderCodeToPng(opts) {
             const canvas = document.createElement('canvas');
             bwipjs.toCanvas(canvas, opts);
             return canvas.toDataURL('image/png');
         }
 
-        // Data Matrix rendu à la taille exacte de l'imprimante : 1 pixel = 1 dot (203 dpi),
-        // module entier (6 dots = 0,75 mm) + zone de silence de `quiet` modules.
-        // On part de la matrice de modules de bwip-js (raw) : aucun rééchantillonnage à l'impression.
+        // Data Matrix rendu à la taille exacte de l'imprimante : 1 pixel = 1 dot (203 dpi)
         function dmPngData(text, moduleDots, quiet) {
             const raw = bwipjs.raw({ bcid: 'datamatrix', text: String(text) })[0];
             const cols = raw.pixx, rows = raw.pixy, pix = raw.pixs;
@@ -130,7 +1041,7 @@
             return { dataUrl: cv.toDataURL('image/png'), dots: side };
         }
 
-        // Taille physique de l'image à l'impression : `dots` pixels imprimante à 203 dpi
+        // Taille physique de l'image à l'impression : dots pixels imprimante à 203 dpi
         function imgSizeStyle(dots) {
             if (!dots) return '';
             const inch = (dots / PRINTER.dpi).toFixed(4);
@@ -138,29 +1049,27 @@
         }
 
         /* =====================================================================
-           IMPRESSION — deux chemins
-           1) DIRECTE : Zebra Browser Print installé sur le poste → la page envoie
-              le ZPL natif à l'imprimante LP 2824 Plus (informations de sécurité :
-              voir IMPRESSION-DIRECTE.md). Silencieux, net au dot près, pas de dialogue.
-           2) NAVIGATEUR : repli automatique sur l'impression actuelle (iframe +
-              @page 1.5in x 1in). Devient silencieux si Chrome est lancé avec
-              --kiosk-printing (raccourci fourni).
+           IMPRESSION : 3 modes automatiques
+           1) WebUSB DIRECT : Chrome communique directement au câble USB de la Zebra.
+              Zéro dialogue, silencieux, 100% dans le navigateur !
+           2) ZEBRA BROWSER PRINT : Si le service Zebra officiel tourne sur le poste.
+           3) NAVIGATEUR : Iframe calibré @page 1.5in x 1in (marges 0).
            ===================================================================== */
         const PRINTER = {
             dpi: 203,                 // Zebra LP 2824 Plus : 203 dpi = 8 dots/mm
             labelW: 304,              // 1.5 in en dots
             labelH: 203,              // 1 in en dots
             dmModule: 6,              // module Data Matrix : 6 dots = 0,75 mm
-            dmQuality: 200,           // ECC 200 (obligatoire pour les douchettes actuelles)
-            dmSize: [18, 18],         // symbole forcé 18x18 (0,0 = taille automatique)
+            dmQuality: 200,           // ECC 200 (obligatoire pour les douchettes)
+            dmSize: [18, 18],         // symbole forcé 18x18
             eanModule: 3,             // barre fine EAN13 : 3 dots = 0,375 mm
-            useLabelLength: false,    // true = ajoute ^LL203 (recale la longueur d'étiquette)
-            utf8: true,               // false = accents remplacés (si l'imprimante affiche des carrés)
+            useLabelLength: false,    // true = ajoute ^LL203
+            utf8: true,               // encodage UTF-8
             sdkFiles: ['BrowserPrint-3.1.250.min.js', 'BrowserPrint-3.0.216.min.js', 'BrowserPrint-1.0.4.min.js', 'BrowserPrint.min.js', 'browserprint.min.js'],
             agentUrls: ['https://localhost:9101/available', 'http://localhost:9101/available']
         };
 
-        // Texte destiné à un champ ^FD : on neutralise les caractères de contrôle ZPL
+        // Texte ZPL pour ^FD
         function zplText(s, upper) {
             let t = String(s == null ? '' : s).replace(/[\^~\\]/g, ' ').replace(/\s+/g, ' ').trim();
             if (upper) t = t.toUpperCase();
@@ -176,7 +1085,6 @@
             return s;
         }
 
-        // Emplacement : Data Matrix + numéro en gros
         function zplEmplacement(code, texte) {
             return zplHeader()
                 + '^FO98,12^BXN,' + PRINTER.dmModule + ',' + PRINTER.dmQuality + ',' + PRINTER.dmSize[0] + ',' + PRINTER.dmSize[1] + ',6^FD' + code + '^FS\n'
@@ -184,7 +1092,6 @@
                 + '^XZ\n';
         }
 
-        // Étoile / Points : Data Matrix + texte en petit
         function zplEtoile(code) {
             return zplHeader()
                 + '^FO110,14^BXN,' + PRINTER.dmModule + ',' + PRINTER.dmQuality + ',0,0,6^FD' + zplText(code) + '^FS\n'
@@ -192,7 +1099,6 @@
                 + '^XZ\n';
         }
 
-        // Allée : EAN13 (barres) + Area/Room + sens de lecture
         function zplAllee(ean, areaRoom, sens) {
             return zplHeader()
                 + '^BY' + PRINTER.eanModule + ',2.0,70\n'
@@ -202,7 +1108,6 @@
                 + '^XZ\n';
         }
 
-        // Badge : EAN13 + nom de l'opérateur souligné
         function zplBadge(ean, nom) {
             return zplHeader()
                 + '^BY' + PRINTER.eanModule + ',2.0,80\n'
@@ -212,50 +1117,79 @@
                 + '^XZ\n';
         }
 
-        function toggleDarkMode() { document.body.classList.toggle('dark-mode'); }
         function setupAreaGrid() {
-            const container = document.getElementById('area-grid-btns'); container.innerHTML = '';
+            const container = document.getElementById('area-grid-btns');
+            container.innerHTML = '';
             areaList.forEach(num => {
-                const btn = document.createElement('button'); btn.className = 'area-btn'; btn.innerText = 'Area ' + num;
-                btn.onclick = () => { selectedArea = num; document.querySelectorAll('.area-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); checkAutoGenerate(); };
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'area-btn' + (selectedArea === num ? ' active' : '');
+                btn.innerText = 'Area ' + num;
+                btn.onclick = () => {
+                    selectedArea = num;
+                    document.querySelectorAll('.area-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const badge = document.getElementById('selectedAreaBadge');
+                    if (badge) badge.innerText = 'Area ' + num;
+                    checkAutoGenerate();
+                };
                 container.appendChild(btn);
             });
         }
+
         function switchTab(tab, el) {
-            currentTab = tab; selectedArea = null;
-            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active')); el.classList.add('active');
-            document.getElementById('tab-title').innerText = el.innerText;
-            document.getElementById('mode-ui').style.display = (tab==='emplacement' || tab==='allee') ? 'flex' : 'none';
-            document.getElementById('area-selection-zone').style.display = (tab==='emplacement' || tab==='allee') ? 'block' : 'none';
-            if (tab === 'emplacement' || tab === 'allee') setupAreaGrid();
+            currentTab = tab;
+            selectedArea = null;
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            el.classList.add('active');
+            
+            // Titre de l'onglet
+            const titleEl = document.getElementById('tab-title');
+            if (titleEl) titleEl.innerText = el.querySelector('span') ? el.querySelector('span').innerText : el.innerText;
+            
+            // Visibilité sous-modes et zones
+            const hasArea = (tab === 'emplacement' || tab === 'allee');
+            document.getElementById('mode-ui').style.display = hasArea ? 'flex' : 'none';
+            document.getElementById('area-selection-zone').style.display = hasArea ? 'flex' : 'none';
+            
+            if (hasArea) {
+                setupAreaGrid();
+                const badge = document.getElementById('selectedAreaBadge');
+                if (badge) badge.innerText = 'Aucune';
+            }
             setSubMode('single');
         }
+
         function setSubMode(mode) {
             subMode = mode;
             document.getElementById('mode-single').className = mode === 'single' ? 'mode-btn active' : 'mode-btn';
             document.getElementById('mode-mass').className = mode === 'mass' ? 'mode-btn active' : 'mode-btn';
             document.getElementById('form-container').innerHTML = (currentTab === 'emplacement' || currentTab === 'allee') ? forms[currentTab][mode] : forms[currentTab];
-            document.querySelectorAll('#form-container input').forEach(input => input.addEventListener('keyup', checkAutoGenerate));
-            document.getElementById('print-zone').innerHTML = ''; document.getElementById('btnPrint').style.display = 'none';
+            
+            document.querySelectorAll('#form-container input').forEach(input => {
+                input.addEventListener('keyup', checkAutoGenerate);
+                input.addEventListener('change', checkAutoGenerate);
+                input.addEventListener('input', checkAutoGenerate);
+            });
+            
+            document.getElementById('print-zone').innerHTML = '';
+            document.getElementById('emptyPreview').style.display = 'flex';
+            document.getElementById('previewCountBadge').innerText = '0 étiquette';
+            document.getElementById('btnPrint').style.display = 'none';
             document.getElementById('printHint').style.display = 'none';
             labelsToPrint = [];
         }
+
         function checkAutoGenerate() {
             const inputs = Array.from(document.querySelectorAll('#form-container input'));
-            const allFilled = inputs.every(i => i.value.trim() !== "");
+            const allFilled = inputs.length > 0 && inputs.every(i => i.value.trim() !== "");
             const areaOk = (currentTab === 'emplacement' || currentTab === 'allee') ? selectedArea !== null : true;
-            if (allFilled && areaOk) generate();
-        }
-        function getCheckDigit(n) {
-            let sum = 0, str = n.toString();
-            for (let i = 0; i < str.length; i++) {
-                let d = parseInt(str.charAt(str.length - 1 - i));
-                sum += (i % 2 === 0) ? d * 3 : d;
+            if (allFilled && areaOk) {
+                generate();
             }
-            return (10 - (sum % 10)) % 10;
         }
 
-        // Ajoute une étiquette : génère le PNG puis l'affiche en aperçu (img, pas canvas)
+        // Ajoute une étiquette dans le studio d'aperçu
         function addLabel(dataUrl, innerHTML, zpl, dots) {
             labelsToPrint.push({ dataUrl: dataUrl, innerHTML: innerHTML, zpl: zpl, dots: dots || 0 });
             const pz = document.getElementById('print-zone');
@@ -266,75 +1200,199 @@
         }
 
         async function generate() {
-            const pz = document.getElementById('print-zone'); pz.innerHTML = '';
+            const pz = document.getElementById('print-zone');
+            pz.innerHTML = '';
             labelsToPrint = [];
+
             try {
                 if (currentTab === 'emplacement') {
                     let tasks = [];
                     if (subMode === 'single') {
-                        tasks.push({ z: selectedArea, a: document.getElementById('a').value, etg: document.getElementById('etg').value.toUpperCase(), niv: document.getElementById('niv').value, pl: document.getElementById('pl').value.toUpperCase() });
+                        tasks.push({
+                            z: selectedArea,
+                            a: document.getElementById('a').value,
+                            etg: document.getElementById('etg').value.toUpperCase(),
+                            niv: document.getElementById('niv').value,
+                            pl: document.getElementById('pl').value.toUpperCase()
+                        });
                     } else {
-                        const a = document.getElementById('a').value, s = document.getElementById('etg_start').value.toUpperCase().charCodeAt(0), e = document.getElementById('etg_end').value.toUpperCase().charCodeAt(0), nMax = parseInt(document.getElementById('niv_max').value), pMax = document.getElementById('pl_end').value.toUpperCase().charCodeAt(0);
-                        for (let ie = s; ie <= e; ie++) for (let iniv = 1; iniv <= nMax; iniv++) for (let ip = 65; ip <= pMax; ip++) tasks.push({ z: selectedArea, a, etg: String.fromCharCode(ie), niv: iniv, pl: String.fromCharCode(ip) });
+                        const a = document.getElementById('a').value;
+                        const s = document.getElementById('etg_start').value.toUpperCase().charCodeAt(0);
+                        const e = document.getElementById('etg_end').value.toUpperCase().charCodeAt(0);
+                        const nMax = parseInt(document.getElementById('niv_max').value);
+                        const pMax = document.getElementById('pl_end').value.toUpperCase().charCodeAt(0);
+                        for (let ie = s; ie <= e; ie++) {
+                            for (let iniv = 1; iniv <= nMax; iniv++) {
+                                for (let ip = 65; ip <= pMax; ip++) {
+                                    tasks.push({ z: selectedArea, a, etg: String.fromCharCode(ie), niv: iniv, pl: String.fromCharCode(ip) });
+                                }
+                            }
+                        }
                     }
-                    for (let i=0; i < tasks.length; i++) {
+                    for (let i = 0; i < tasks.length; i++) {
                         let t = tasks[i];
                         let code = parseInt((t.z == '0' ? '2030' : '21' + ('0' + t.z).slice(-2)) + '00000000') + (parseInt(t.a) * 1000000) + (t.etg.charCodeAt(0)-64)*10000 + (parseInt(t.niv)*100) + (t.pl.charCodeAt(0)-64);
-                        // Data Matrix rendu au dot près (1 pixel = 1 dot imprimante)
                         let dm = dmPngData(code.toString(), 6, 2);
                         let texte = `${t.z}-${t.a}${t.etg}${t.niv}${t.pl}`;
-                        let inner = `<div style="font-weight:800; font-size:18pt;">${escapeHtml(texte)}</div>`;
+                        let inner = `<div style="font-weight:800; font-size:18pt; letter-spacing:-0.5px;">${escapeHtml(texte)}</div>`;
                         addLabel(dm.dataUrl, inner, zplEmplacement(code.toString(), texte), dm.dots);
                     }
                 } else if (currentTab === 'allee') {
                     let list = [];
-                    if (subMode === 'single') list.push({z: selectedArea, a: document.getElementById('a').value});
-                    else {
-                        const start = parseInt(document.getElementById('a_start').value), end = parseInt(document.getElementById('a_end').value);
-                        for(let i=start; i<=end; i++) list.push({z: selectedArea, a: i.toString()});
+                    if (subMode === 'single') {
+                        list.push({ z: selectedArea, a: document.getElementById('a').value });
+                    } else {
+                        const start = parseInt(document.getElementById('a_start').value);
+                        const end = parseInt(document.getElementById('a_end').value);
+                        for (let i = start; i <= end; i++) list.push({ z: selectedArea, a: i.toString() });
                     }
-                    for (let i=0; i < list.length; i++) {
-                        let t = list[i]; const aF = t.a.padStart(2, '0'), zF = t.z.toString().padStart(2, '0');
-                        const configs = [{ id: `${i}AZ`, text: `20330000${zF}${aF}`, t: `Area ${t.z} Room ${t.a}`, d: 'A ➔ Z' }, { id: `${i}ZA`, text: `20330100${zF}${aF}`, t: `Area ${t.z} Room ${t.a}`, d: 'Z ➔ A' }];
+                    for (let i = 0; i < list.length; i++) {
+                        let t = list[i];
+                        const aF = t.a.padStart(2, '0');
+                        const zF = t.z.toString().padStart(2, '0');
+                        const configs = [
+                            { id: `${i}AZ`, text: `20330000${zF}${aF}`, t: `Area ${t.z} Room ${t.a}`, d: 'A ➔ Z' },
+                            { id: `${i}ZA`, text: `20330100${zF}${aF}`, t: `Area ${t.z} Room ${t.a}`, d: 'Z ➔ A' }
+                        ];
                         configs.forEach(conf => {
-                            // EAN13 : scale monté à 4 pour une impression nette (1.8 = flou)
-                            let dataUrl = renderCodeToPng({ bcid:'ean13', text:conf.text, scale:4, height:10 });
+                            let dataUrl = renderCodeToPng({ bcid: 'ean13', text: conf.text, scale: 4, height: 10 });
                             let inner = `<div class="txt-row1">${escapeHtml(conf.t)}</div><div class="txt-row2">${escapeHtml(conf.d)}</div>`;
                             addLabel(dataUrl, inner, zplAllee(conf.text, conf.t, conf.d.replace('➔', '->')), 0);
                         });
                     }
                 } else if (currentTab === 'badge') {
-                    const id = document.getElementById('b_id').value, name = document.getElementById('b_name').value;
+                    const id = document.getElementById('b_id').value;
+                    const name = document.getElementById('b_name').value;
                     const base = "20320000" + id.toString().padStart(4, '0');
-                    // EAN13 : scale monté à 4 pour une impression nette (1.8 = flou)
-                    let dataUrl = renderCodeToPng({ bcid:'ean13', text:base, scale:4, height:12 });
-                    let inner = `<div style="font-size:14pt; border-bottom:1px solid #000; width:95%; height:0.4in; display:flex; align-items:center; justify-content:center; font-weight:bold; text-transform:uppercase;">${escapeHtml(name || id)}</div>`;
+                    let dataUrl = renderCodeToPng({ bcid: 'ean13', text: base, scale: 4, height: 12 });
+                    let inner = `<div style="font-size:14pt; border-bottom:1.5px solid #000; width:95%; height:0.4in; display:flex; align-items:center; justify-content:center; font-weight:bold; text-transform:uppercase;">${escapeHtml(name || id)}</div>`;
                     addLabel(dataUrl, inner, zplBadge(base, name || id), 0);
                 } else if (currentTab === 'etoile') {
-                    // --- LOGIQUE DATA MATRIX POINTS (ANCIEN ONGLET ÉTOILE) ---
                     const sc = document.getElementById('star_code').value;
                     let dm = dmPngData(sc, 6, 2);
                     let inner = `<div class="res-text">${escapeHtml(sc)}</div>`;
                     addLabel(dm.dataUrl, inner, zplEtoile(sc), dm.dots);
                 }
-                document.getElementById('btnPrint').style.display = 'block';
-                document.getElementById('printHint').style.display = 'block';
-                updateModeInfo();
-            } catch (e) { console.error(e); }
+
+                // Mise à jour de l'affichage
+                const count = labelsToPrint.length;
+                document.getElementById('emptyPreview').style.display = count > 0 ? 'none' : 'flex';
+                document.getElementById('previewCountBadge').innerText = `${count} étiquette${count > 1 ? 's' : ''}`;
+                
+                const btnPrint = document.getElementById('btnPrint');
+                const btnPrintText = document.getElementById('btnPrintText');
+                if (count > 0) {
+                    btnPrint.style.display = 'inline-flex';
+                    btnPrintText.innerText = count === 1 ? "IMPRIMER L'ÉTIQUETTE" : `IMPRIMER LES ${count} ÉTIQUETTES`;
+                    // Affichage du hint uniquement si pas d'impression directe détectée
+                    if (!usbPrinterDevice && bpState !== true) {
+                        document.getElementById('printHint').style.display = 'block';
+                    }
+                }
+                updatePrinterStatus();
+            } catch (e) {
+                console.error(e);
+            }
         }
 
-        /* ===================== Impression directe (Zebra) ===================== */
+        /* =====================================================================
+           GESTIONNAIRE USB (WebUSB natif Chrome / Linux)
+           ===================================================================== */
+        let usbPrinterDevice = null;
+        let usbBulkOutEndpoint = null;
+        let usbInterfaceNum = 0;
 
-        let bpState = null;          // null = pas encore testé, true/false ensuite
-        let bpProbe = null;          // promesse partagée
+        async function initWebUsb() {
+            if (!navigator.usb) return;
+            const btn = document.getElementById('btnConnectUsb');
+            if (btn) btn.style.display = 'inline-flex';
 
-        function updateModeInfo() {
-            const el = document.getElementById('modeInfo');
-            if (!el) return;
-            if (bpState === true) el.innerText = 'Impression directe : imprimante Zebra (silencieux)';
-            else if (bpState === false) el.innerText = 'Impression navigateur — Browser Print non détecté (Marges : Aucune, Échelle : 100%)';
-            else el.innerText = 'Détection de l\'imprimante…';
+            try {
+                const devices = await navigator.usb.getDevices();
+                const zebra = devices.find(d => d.vendorId === 0x0a5f);
+                if (zebra) {
+                    await setupUsbPrinter(zebra);
+                }
+            } catch (err) {
+                console.log("Recherche USB auto:", err);
+            }
         }
+
+        async function connectUsbPrinter() {
+            if (!navigator.usb) {
+                alert("WebUSB nécessite Google Chrome ou Chromium.");
+                return;
+            }
+            try {
+                const device = await navigator.usb.requestDevice({
+                    filters: [{ vendorId: 0x0a5f }] // Zebra Technologies
+                });
+                await setupUsbPrinter(device);
+            } catch (err) {
+                console.log("Sélection USB annulée:", err);
+            }
+        }
+
+        async function setupUsbPrinter(device) {
+            try {
+                await device.open();
+                if (device.configuration === null) {
+                    await device.selectConfiguration(1);
+                }
+                let outEp = null;
+                let ifaceId = 0;
+                for (const iface of device.configuration.interfaces) {
+                    for (const alt of iface.alternates) {
+                        for (const ep of alt.endpoints) {
+                            if (ep.direction === 'out' && ep.type === 'bulk') {
+                                outEp = ep.endpointNumber;
+                                ifaceId = iface.interfaceNumber;
+                                break;
+                            }
+                        }
+                        if (outEp !== null) break;
+                    }
+                    if (outEp !== null) break;
+                }
+                if (outEp === null) {
+                    outEp = 1;
+                    ifaceId = 0;
+                }
+                await device.claimInterface(ifaceId);
+                usbPrinterDevice = device;
+                usbBulkOutEndpoint = outEp;
+                usbInterfaceNum = ifaceId;
+
+                const btn = document.getElementById('btnConnectUsb');
+                if (btn) btn.style.display = 'none';
+                updatePrinterStatus();
+                showToast("✓ Imprimante Zebra connectée en direct via USB !");
+            } catch (err) {
+                console.warn("Erreur d'initialisation USB:", err);
+                if (err.name === 'SecurityError' || String(err).includes('claimInterface')) {
+                    alert("Accès USB : Linux a restreint le port. Ajoutez votre compte au groupe lp (sudo usermod -a -G lp $USER) puis redémarrez la session.");
+                }
+            }
+        }
+
+        async function printDirectUsb(zplString) {
+            if (!usbPrinterDevice || usbBulkOutEndpoint === null) return false;
+            try {
+                const encoder = new TextEncoder();
+                const data = encoder.encode(zplString);
+                await usbPrinterDevice.transferOut(usbBulkOutEndpoint, data);
+                return true;
+            } catch (err) {
+                console.error("Erreur d'envoi USB:", err);
+                return false;
+            }
+        }
+
+        /* =====================================================================
+           ZEBRA BROWSER PRINT (Service local Zebra)
+           ===================================================================== */
+        let bpState = null;
+        let bpProbe = null;
 
         function probeUrl(url) {
             return new Promise(resolve => {
@@ -356,7 +1414,6 @@
             });
         }
 
-        // Cherche le SDK Browser Print : d'abord local sur le poste, sinon à côté de la page
         async function loadBrowserPrintSdk() {
             if (window.BrowserPrint) return true;
             const bases = window.BrowserPrintSdkBase ? [window.BrowserPrintSdkBase] : [''];
@@ -397,13 +1454,45 @@
                 await new Promise((resolve, reject) => printer.send(zpl, resolve, e => reject(new Error(String(e)))));
                 return true;
             } catch (e) {
-                alert('Impression directe impossible : ' + (e.message || e) + '\n\nVérifiez que Browser Print est lancé et que l\'imprimante Zebra est allumée, puis réessayez.');
+                console.warn('Browser Print:', e);
                 return 'error';
             }
         }
 
-        /* ===================== Impression navigateur (repli) ===================== */
+        /* =====================================================================
+           MISE À JOUR DES STATUTS
+           ===================================================================== */
+        function updatePrinterStatus() {
+            const dot = document.getElementById('statusDot');
+            const txt = document.getElementById('printerStatusText');
+            const info = document.getElementById('modeInfo');
 
+            if (usbPrinterDevice) {
+                dot.className = 'status-dot active';
+                txt.innerText = 'Zebra USB prête';
+                if (info) info.innerText = 'Impression directe par câble USB (aucun dialogue, ZPL natif 203 DPI)';
+            } else if (bpState === true) {
+                dot.className = 'status-dot active';
+                txt.innerText = 'Zebra Browser Print';
+                if (info) info.innerText = 'Impression directe via Zebra Browser Print (silencieux)';
+            } else if (bpState === false) {
+                dot.className = 'status-dot warning';
+                txt.innerText = 'Mode Navigateur';
+                if (info) info.innerText = 'Impression standard (Marges : Aucune, Échelle : 100%)';
+            } else {
+                dot.className = 'status-dot';
+                txt.innerText = 'Détection…';
+                if (info) info.innerText = 'Recherche de connexion imprimante…';
+            }
+        }
+
+        function updateModeInfo() {
+            updatePrinterStatus();
+        }
+
+        /* =====================================================================
+           IMPRESSION NAVIGATEUR (REPLI)
+           ===================================================================== */
         function browserPrint() {
             const labelsHtml = labelsToPrint.map(l => `
     <div class="label">
@@ -475,7 +1564,6 @@
 </body>
 </html>`;
 
-            // Iframe caché hors-écran (jamais width:0 → page blanche à l'impression)
             let iframe = document.getElementById('print-frame');
             if (iframe) iframe.remove();
             iframe = document.createElement('iframe');
@@ -488,7 +1576,6 @@
             doc.write(html);
             doc.close();
 
-            // Impression après chargement des images
             iframe.onload = () => {
                 setTimeout(() => {
                     iframe.contentWindow.print();
@@ -497,20 +1584,47 @@
             };
         }
 
+        /* =====================================================================
+           DÉCLENCHEMENT DE L'IMPRESSION
+           ===================================================================== */
         async function printLabels() {
-            if (!labelsToPrint.length) { alert('Générez d\'abord les étiquettes'); return; }
+            if (!labelsToPrint.length) {
+                alert("Générez d'abord les étiquettes.");
+                return;
+            }
 
             const zpl = labelsToPrint.map(l => l.zpl).filter(Boolean).join('');
+
+            // 1. Essai d'impression directe WebUSB
+            if (usbPrinterDevice && zpl) {
+                const ok = await printDirectUsb(zpl);
+                if (ok) {
+                    showToast(`✓ ${labelsToPrint.length} étiquette(s) imprimée(s) directement via USB !`);
+                    return;
+                }
+            }
+
+            // 2. Essai d'impression directe Zebra Browser Print
             if (zpl) {
                 const res = await directPrint(zpl);
-                if (res === true) return;          // envoyé à l'imprimante, aucun dialogue
-                if (res === 'error') return;       // erreur signalée : on ne double pas l'impression
+                if (res === true) {
+                    showToast(`✓ Envoyé directement à l'imprimante Zebra !`);
+                    return;
+                }
+                if (res === 'error') return;
             }
-            updateModeInfo();
+
+            // 3. Repli navigateur
+            updatePrinterStatus();
             browserPrint();
         }
 
-        window.onload = () => { switchTab('emplacement', document.getElementById('btn-emp')); updateModeInfo(); bpReady().then(updateModeInfo); };
+        window.onload = () => {
+            initTheme();
+            switchTab('emplacement', document.getElementById('btn-emp'));
+            initWebUsb();
+            bpReady().then(updatePrinterStatus);
+        };
     </script>
 </body>
 </html>
