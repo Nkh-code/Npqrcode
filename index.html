@@ -1038,7 +1038,7 @@
                     if (pix[y * cols + x]) ctx.fillRect(off + x * moduleDots, off + y * moduleDots, moduleDots, moduleDots);
                 }
             }
-            return { dataUrl: cv.toDataURL('image/png'), dots: side };
+            return { dataUrl: cv.toDataURL('image/png'), dots: side, rows: rows, cols: cols };
         }
 
         // Taille physique de l'image à l'impression : dots pixels imprimante à 203 dpi
@@ -1092,10 +1092,21 @@
                 + '^XZ\n';
         }
 
-        function zplEtoile(code) {
+        function zplEtoile(code, rows, cols) {
+            const r = rows || 14;
+            const c = cols || 14;
+            const dmH = r * PRINTER.dmModule;
+            const dmW = c * PRINTER.dmModule;
+            const gap = 8;
+            const textH = 26;
+            const totalH = dmH + gap + textH;
+            const dmY = Math.max(6, Math.round((PRINTER.labelH - totalH) / 2));
+            const dmX = Math.round((PRINTER.labelW - dmW) / 2);
+            const textY = dmY + dmH + gap;
+
             return zplHeader()
-                + '^FO110,14^BXN,' + PRINTER.dmModule + ',' + PRINTER.dmQuality + ',0,0,6^FD' + zplText(code) + '^FS\n'
-                + '^FO0,150^A0N,34,28^FB' + PRINTER.labelW + ',1,0,C,0^FD' + zplText(code) + '^FS\n'
+                + '^FO' + dmX + ',' + dmY + '^BXN,' + PRINTER.dmModule + ',' + PRINTER.dmQuality + ',0,0,6^FD' + zplText(code) + '^FS\n'
+                + '^FO0,' + textY + '^A0N,28,24^FB' + PRINTER.labelW + ',1,0,C,0^FD' + zplText(code) + '^FS\n'
                 + '^XZ\n';
         }
 
@@ -1271,7 +1282,7 @@
                     const sc = document.getElementById('star_code').value;
                     let dm = dmPngData(sc, 6, 2);
                     let inner = `<div class="res-text">${escapeHtml(sc)}</div>`;
-                    addLabel(dm.dataUrl, inner, zplEtoile(sc), dm.dots);
+                    addLabel(dm.dataUrl, inner, zplEtoile(sc, dm.rows, dm.cols), dm.dots);
                 }
 
                 // Mise à jour de l'affichage
