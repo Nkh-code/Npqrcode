@@ -720,13 +720,13 @@
         .zoom-2 .label-style { transform: scale(1.8); margin: 34px 22px; }
 
         /* Styles spécifiques aux étiquettes (1.5 x 1 in) */
-        .emp-top-row { display: flex; width: 100%; align-items: center; justify-content: space-between; padding: 2px 10px 0; box-sizing: border-box; }
-        .area-block { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; min-width: 55px; }
-        .area-title { font-size: 8pt; font-weight: 900; letter-spacing: 1px; color: #000; text-transform: uppercase; }
-        .area-num { font-size: 20pt; font-weight: 900; color: #000; line-height: 1; margin-top: 2px; }
+        .emp-top-row { display: flex; width: 100%; align-items: center; justify-content: space-between; padding: 2px 6px 0; box-sizing: border-box; flex: 1; }
+        .area-block { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; min-width: 50px; }
+        .area-title { font-size: 8.5pt; font-weight: 900; letter-spacing: 1px; color: #000; text-transform: uppercase; }
+        .area-num { font-size: 22pt; font-weight: 900; color: #000; line-height: 1; margin-top: 2px; }
         .dm-box { display: flex; align-items: center; justify-content: center; }
-        .dm-box img { max-height: 0.54in; max-width: 0.54in; image-rendering: pixelated; }
-        .emp-bottom-text { font-size: 13.5pt; font-weight: 900; color: #000; letter-spacing: 0.8px; text-align: center; width: 100%; line-height: 1; margin-bottom: 4px; white-space: nowrap; font-family: -apple-system, Arial, sans-serif; }
+        .dm-box img { max-height: 0.62in; max-width: 0.62in; image-rendering: pixelated; }
+        .emp-bottom-text { font-size: 18pt; font-weight: 900; color: #000; letter-spacing: 1px; text-align: center; width: 100%; line-height: 1; margin-bottom: 2px; white-space: nowrap; font-family: -apple-system, Arial, sans-serif; }
 
         .allee-header { font-size: 8.5pt; font-weight: 800; color: #000; letter-spacing: 0.5px; text-align: center; text-transform: uppercase; line-height: 1; margin-top: 2px; }
         .allee-dir { font-size: 15pt; font-weight: 900; color: #000; letter-spacing: 1.5px; text-align: center; line-height: 1; margin: 3px 0 2px; }
@@ -1104,10 +1104,10 @@
 
         function zplEmplacement(code, areaNum, texte) {
             return zplHeader()
-                + '^FO16,22^A0N,26,24^FB84,1,0,C,0^FDAREA^FS\n'
-                + '^FO16,52^A0N,56,48^FB84,1,0,C,0^FD' + zplText(areaNum) + '^FS\n'
-                + '^FO130,16^BXN,' + PRINTER.dmModule + ',' + PRINTER.dmQuality + ',0,0,6^FD' + code + '^FS\n'
-                + '^FO0,140^A0N,48,36^FB' + PRINTER.labelW + ',1,0,C,0^FD' + zplText(texte, true) + '^FS\n'
+                + '^FO16,14^A0N,26,24^FB84,1,0,C,0^FDAREA^FS\n'
+                + '^FO16,46^A0N,60,50^FB84,1,0,C,0^FD' + zplText(areaNum) + '^FS\n'
+                + '^FO124,8^BXN,7,' + PRINTER.dmQuality + ',0,0,6^FD' + code + '^FS\n'
+                + '^FO0,140^A0N,52,42^FB' + PRINTER.labelW + ',1,0,C,0^FD' + zplText(texte, true) + '^FS\n'
                 + '^XZ\n';
         }
 
@@ -1262,8 +1262,8 @@
                     for (let i = 0; i < tasks.length; i++) {
                         let t = tasks[i];
                         let code = parseInt((t.z == '0' ? '2030' : '21' + ('0' + t.z).slice(-2)) + '00000000') + (parseInt(t.a) * 1000000) + (t.etg.charCodeAt(0)-64)*10000 + (parseInt(t.niv)*100) + (t.pl.charCodeAt(0)-64);
-                        let dm = dmPngData(code.toString(), 6, 2);
-                        let texte = `${t.a} - ${t.etg} - ${t.niv} - ${t.pl}`;
+                        let dm = dmPngData(code.toString(), 7, 2);
+                        let texte = `${t.a} ${t.etg}${t.niv}${t.pl}`;
                         let html = `
                             <div class="emp-top-row">
                                 <div class="area-block">
@@ -1573,13 +1573,13 @@
     }
     .label:last-child { page-break-after: auto; }
     
-    .emp-top-row { display: flex; width: 100%; align-items: center; justify-content: space-between; padding: 2px 8px 0; box-sizing: border-box; }
-    .area-block { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; min-width: 55px; }
-    .area-title { font-size: 8pt; font-weight: 900; letter-spacing: 1px; color: #000; text-transform: uppercase; font-family: Arial, sans-serif; }
-    .area-num { font-size: 20pt; font-weight: 900; color: #000; line-height: 1; margin-top: 2px; font-family: Arial, sans-serif; }
+    .emp-top-row { display: flex; width: 100%; align-items: center; justify-content: space-between; padding: 2px 6px 0; box-sizing: border-box; }
+    .area-block { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; min-width: 50px; }
+    .area-title { font-size: 8.5pt; font-weight: 900; letter-spacing: 1px; color: #000; text-transform: uppercase; font-family: -apple-system, Arial, sans-serif; }
+    .area-num { font-size: 22pt; font-weight: 900; color: #000; line-height: 1; margin-top: 2px; font-family: -apple-system, Arial, sans-serif; }
     .dm-box { display: flex; align-items: center; justify-content: center; }
-    .dm-box img { max-height: 0.54in; max-width: 0.54in; image-rendering: pixelated; }
-    .emp-bottom-text { font-size: 13.5pt; font-weight: 900; color: #000; letter-spacing: 0.8px; text-align: center; width: 100%; line-height: 1; margin-bottom: 3px; white-space: nowrap; font-family: Arial, sans-serif; }
+    .dm-box img { max-height: 0.62in; max-width: 0.62in; image-rendering: pixelated; }
+    .emp-bottom-text { font-size: 18pt; font-weight: 900; color: #000; letter-spacing: 1px; text-align: center; width: 100%; line-height: 1; margin-bottom: 2px; white-space: nowrap; font-family: -apple-system, Arial, sans-serif; }
 
     .allee-header { font-size: 8.5pt; font-weight: 800; color: #000; letter-spacing: 0.5px; text-align: center; text-transform: uppercase; line-height: 1; margin-top: 2px; font-family: Arial, sans-serif; }
     .allee-dir { font-size: 15pt; font-weight: 900; color: #000; letter-spacing: 1.5px; text-align: center; line-height: 1; margin: 3px 0 2px; font-family: Arial, sans-serif; }
