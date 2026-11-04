@@ -716,10 +716,24 @@
         .zoom-15 .label-style { transform: scale(1.4); margin: 18px 12px; }
         .zoom-2 .label-style { transform: scale(1.8); margin: 34px 22px; }
 
+        /* Styles spécifiques aux étiquettes (1.5 x 1 in) */
+        .emp-top-row { display: flex; width: 100%; align-items: center; justify-content: space-between; padding: 2px 10px 0; box-sizing: border-box; }
+        .area-block { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; min-width: 55px; }
+        .area-title { font-size: 8pt; font-weight: 900; letter-spacing: 1px; color: #000; text-transform: uppercase; }
+        .area-num { font-size: 20pt; font-weight: 900; color: #000; line-height: 1; margin-top: 2px; }
+        .dm-box { display: flex; align-items: center; justify-content: center; }
+        .dm-box img { max-height: 0.54in; max-width: 0.54in; image-rendering: pixelated; }
+        .emp-bottom-text { font-size: 13.5pt; font-weight: 900; color: #000; letter-spacing: 0.8px; text-align: center; width: 100%; line-height: 1; margin-bottom: 4px; white-space: nowrap; font-family: -apple-system, Arial, sans-serif; }
+
+        .allee-header { font-size: 8.5pt; font-weight: 800; color: #000; letter-spacing: 0.5px; text-align: center; text-transform: uppercase; line-height: 1; margin-top: 2px; }
+        .allee-dir { font-size: 15pt; font-weight: 900; color: #000; letter-spacing: 1.5px; text-align: center; line-height: 1; margin: 3px 0 2px; }
+        .tall-barcode { width: 100%; display: flex; justify-content: center; align-items: center; }
+        .tall-barcode img { max-height: 0.48in; max-width: 96%; image-rendering: pixelated; }
+
         .txt-row1 { font-size: 9pt; font-weight: bold; margin-bottom: 1px; color: #000 !important; font-family: Arial, sans-serif; }
-        .txt-row2 { font-size: 11pt; font-weight: bold; color: #444 !important; margin-bottom: 3px; font-family: Arial, sans-serif; }
+        .txt-row2 { font-size: 11pt; font-weight: bold; color: #000 !important; margin-bottom: 3px; font-family: Arial, sans-serif; }
         .barcode-box { width: 100%; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-        .res-text { font-weight: 800; font-size: 7pt; margin-top: 5px; letter-spacing: 1px; font-family: var(--font-mono); color: #000 !important; }
+        .res-text { font-weight: 800; font-size: 8pt; margin-top: 3px; letter-spacing: 0.5px; font-family: var(--font-mono); color: #000 !important; }
         .barcode-box img { max-height: 0.55in; max-width: 92%; image-rendering: pixelated; }
 
         /* Toast notification */
@@ -1085,10 +1099,12 @@
             return s;
         }
 
-        function zplEmplacement(code, texte) {
+        function zplEmplacement(code, areaNum, texte) {
             return zplHeader()
-                + '^FO98,12^BXN,' + PRINTER.dmModule + ',' + PRINTER.dmQuality + ',' + PRINTER.dmSize[0] + ',' + PRINTER.dmSize[1] + ',6^FD' + code + '^FS\n'
-                + '^FO0,128^A0N,52,42^FB' + PRINTER.labelW + ',1,0,C,0^FD' + zplText(texte, true) + '^FS\n'
+                + '^FO16,22^A0N,26,24^FB84,1,0,C,0^FDAREA^FS\n'
+                + '^FO16,52^A0N,56,48^FB84,1,0,C,0^FD' + zplText(areaNum) + '^FS\n'
+                + '^FO130,16^BXN,' + PRINTER.dmModule + ',' + PRINTER.dmQuality + ',0,0,6^FD' + code + '^FS\n'
+                + '^FO0,140^A0N,48,36^FB' + PRINTER.labelW + ',1,0,C,0^FD' + zplText(texte, true) + '^FS\n'
                 + '^XZ\n';
         }
 
@@ -1112,10 +1128,10 @@
 
         function zplAllee(ean, areaRoom, sens) {
             return zplHeader()
-                + '^BY' + PRINTER.eanModule + ',2.0,70\n'
-                + '^FO9,15^BEN,70,N,N^FD' + ean + '^FS\n'
-                + '^FO0,105^A0N,30,26^FB' + PRINTER.labelW + ',1,0,C,0^FD' + zplText(areaRoom) + '^FS\n'
-                + '^FO0,140^A0N,34,30^FB' + PRINTER.labelW + ',1,0,C,0^FD' + zplText(sens) + '^FS\n'
+                + '^FO0,10^A0N,26,24^FB' + PRINTER.labelW + ',1,0,C,0^FD' + zplText(areaRoom) + '^FS\n'
+                + '^FO0,38^A0N,44,38^FB' + PRINTER.labelW + ',1,0,C,0^FD' + zplText(sens) + '^FS\n'
+                + '^BY' + PRINTER.eanModule + ',2.0,90\n'
+                + '^FO9,88^BEN,90,N,N^FD' + ean + '^FS\n'
                 + '^XZ\n';
         }
 
@@ -1201,12 +1217,12 @@
         }
 
         // Ajoute une étiquette dans le studio d'aperçu
-        function addLabel(dataUrl, innerHTML, zpl, dots) {
-            labelsToPrint.push({ dataUrl: dataUrl, innerHTML: innerHTML, zpl: zpl, dots: dots || 0 });
+        function addLabel(dataUrl, html, zpl, dots, isCustom) {
+            labelsToPrint.push({ dataUrl: dataUrl, html: html, zpl: zpl, dots: dots || 0, isCustom: !!isCustom });
             const pz = document.getElementById('print-zone');
             const div = document.createElement('div');
             div.className = 'label-style';
-            div.innerHTML = `<div class="barcode-box"><img src="${dataUrl}" alt=""${imgSizeStyle(dots)}></div>${innerHTML}`;
+            div.innerHTML = isCustom ? html : `<div class="barcode-box"><img src="${dataUrl}" alt=""${imgSizeStyle(dots)}></div>${html}`;
             pz.appendChild(div);
         }
 
@@ -1244,9 +1260,18 @@
                         let t = tasks[i];
                         let code = parseInt((t.z == '0' ? '2030' : '21' + ('0' + t.z).slice(-2)) + '00000000') + (parseInt(t.a) * 1000000) + (t.etg.charCodeAt(0)-64)*10000 + (parseInt(t.niv)*100) + (t.pl.charCodeAt(0)-64);
                         let dm = dmPngData(code.toString(), 6, 2);
-                        let texte = `${t.z}-${t.a}${t.etg}${t.niv}${t.pl}`;
-                        let inner = `<div style="font-weight:800; font-size:18pt; letter-spacing:-0.5px;">${escapeHtml(texte)}</div>`;
-                        addLabel(dm.dataUrl, inner, zplEmplacement(code.toString(), texte), dm.dots);
+                        let texte = `${t.a} - ${t.etg} - ${t.niv} - ${t.pl}`;
+                        let html = `
+                            <div class="emp-top-row">
+                                <div class="area-block">
+                                    <span class="area-title">AREA</span>
+                                    <span class="area-num">${escapeHtml(t.z)}</span>
+                                </div>
+                                <div class="barcode-box dm-box"><img src="${dm.dataUrl}" alt=""${imgSizeStyle(dm.dots)}></div>
+                            </div>
+                            <div class="emp-bottom-text">${escapeHtml(texte)}</div>
+                        `;
+                        addLabel(dm.dataUrl, html, zplEmplacement(code.toString(), t.z, texte), dm.dots, true);
                     }
                 } else if (currentTab === 'allee') {
                     let list = [];
@@ -1266,9 +1291,13 @@
                             { id: `${i}ZA`, text: `20330100${zF}${aF}`, t: `Area ${t.z} Room ${t.a}`, d: 'Z ➔ A' }
                         ];
                         configs.forEach(conf => {
-                            let dataUrl = renderCodeToPng({ bcid: 'ean13', text: conf.text, scale: 4, height: 10 });
-                            let inner = `<div class="txt-row1">${escapeHtml(conf.t)}</div><div class="txt-row2">${escapeHtml(conf.d)}</div>`;
-                            addLabel(dataUrl, inner, zplAllee(conf.text, conf.t, conf.d.replace('➔', '->')), 0);
+                            let dataUrl = renderCodeToPng({ bcid: 'ean13', text: conf.text, scale: 4, height: 14 });
+                            let html = `
+                                <div class="allee-header">${escapeHtml(conf.t)}</div>
+                                <div class="allee-dir">${escapeHtml(conf.d)}</div>
+                                <div class="barcode-box tall-barcode"><img src="${dataUrl}" alt=""></div>
+                            `;
+                            addLabel(dataUrl, html, zplAllee(conf.text, conf.t, conf.d.replace('➔', '->')), 0, true);
                         });
                     }
                 } else if (currentTab === 'badge') {
@@ -1276,13 +1305,19 @@
                     const name = document.getElementById('b_name').value;
                     const base = "20320000" + id.toString().padStart(4, '0');
                     let dataUrl = renderCodeToPng({ bcid: 'ean13', text: base, scale: 4, height: 12 });
-                    let inner = `<div style="font-size:14pt; border-bottom:1.5px solid #000; width:95%; height:0.4in; display:flex; align-items:center; justify-content:center; font-weight:bold; text-transform:uppercase;">${escapeHtml(name || id)}</div>`;
-                    addLabel(dataUrl, inner, zplBadge(base, name || id), 0);
+                    let html = `
+                        <div style="font-size:14pt; border-bottom:1.5px solid #000; width:95%; height:0.4in; display:flex; align-items:center; justify-content:center; font-weight:bold; text-transform:uppercase;">${escapeHtml(name || id)}</div>
+                        <div class="barcode-box"><img src="${dataUrl}" alt=""></div>
+                    `;
+                    addLabel(dataUrl, html, zplBadge(base, name || id), 0, true);
                 } else if (currentTab === 'etoile') {
                     const sc = document.getElementById('star_code').value;
                     let dm = dmPngData(sc, 6, 2);
-                    let inner = `<div class="res-text">${escapeHtml(sc)}</div>`;
-                    addLabel(dm.dataUrl, inner, zplEtoile(sc, dm.rows, dm.cols), dm.dots);
+                    let html = `
+                        <div class="barcode-box"><img src="${dm.dataUrl}" alt=""${imgSizeStyle(dm.dots)}></div>
+                        <div class="res-text">${escapeHtml(sc)}</div>
+                    `;
+                    addLabel(dm.dataUrl, html, zplEtoile(sc, dm.rows, dm.cols), dm.dots, true);
                 }
 
                 // Mise à jour de l'affichage
@@ -1510,8 +1545,7 @@
         function browserPrint() {
             const labelsHtml = labelsToPrint.map(l => `
     <div class="label">
-        <div class="barcode-box"><img src="${l.dataUrl}" alt=""${imgSizeStyle(l.dots)}></div>
-        ${l.innerHTML}
+        ${l.isCustom ? l.html : `<div class="barcode-box"><img src="${l.dataUrl}" alt=""${imgSizeStyle(l.dots)}></div>${l.html}`}
     </div>`).join('');
 
             const html = `<!DOCTYPE html>
@@ -1526,31 +1560,43 @@
     .label {
         display: flex;
         flex-direction: column;
-        justify-content: center;
+        justify-content: space-between;
         align-items: center;
         width: 1.5in; height: 1in;
-        padding: 0;
+        padding: 4px 6px;
         overflow: hidden;
         page-break-after: always;
+        box-sizing: border-box;
     }
     .label:last-child { page-break-after: auto; }
+    
+    .emp-top-row { display: flex; width: 100%; align-items: center; justify-content: space-between; padding: 2px 8px 0; box-sizing: border-box; }
+    .area-block { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; min-width: 55px; }
+    .area-title { font-size: 8pt; font-weight: 900; letter-spacing: 1px; color: #000; text-transform: uppercase; font-family: Arial, sans-serif; }
+    .area-num { font-size: 20pt; font-weight: 900; color: #000; line-height: 1; margin-top: 2px; font-family: Arial, sans-serif; }
+    .dm-box { display: flex; align-items: center; justify-content: center; }
+    .dm-box img { max-height: 0.54in; max-width: 0.54in; image-rendering: pixelated; }
+    .emp-bottom-text { font-size: 13.5pt; font-weight: 900; color: #000; letter-spacing: 0.8px; text-align: center; width: 100%; line-height: 1; margin-bottom: 3px; white-space: nowrap; font-family: Arial, sans-serif; }
+
+    .allee-header { font-size: 8.5pt; font-weight: 800; color: #000; letter-spacing: 0.5px; text-align: center; text-transform: uppercase; line-height: 1; margin-top: 2px; font-family: Arial, sans-serif; }
+    .allee-dir { font-size: 15pt; font-weight: 900; color: #000; letter-spacing: 1.5px; text-align: center; line-height: 1; margin: 3px 0 2px; font-family: Arial, sans-serif; }
+    .tall-barcode { width: 100%; display: flex; justify-content: center; align-items: center; }
+    .tall-barcode img { max-height: 0.48in; max-width: 96%; image-rendering: pixelated; }
+
     .label .barcode-box {
         width: 100%;
         display: flex; justify-content: center; align-items: center;
         overflow: hidden;
-        flex-grow: 1;
     }
     .label img {
         max-height: 0.55in; max-width: 92%;
         image-rendering: pixelated;
     }
-    .label .txt-row1 { font-size: 9pt; font-weight: bold; margin-bottom: 1px; font-family: Arial, sans-serif; color: #000; }
-    .label .txt-row2 { font-size: 11pt; font-weight: bold; color: #444; margin-bottom: 3px; font-family: Arial, sans-serif; }
     .label .res-text {
         font-weight: 800;
-        font-size: 7pt;
-        margin-top: 5px;
-        letter-spacing: 1px;
+        font-size: 8pt;
+        margin-top: 3px;
+        letter-spacing: 0.5px;
         font-family: 'Courier New', monospace;
         color: #000;
         text-align: center;
@@ -1560,12 +1606,6 @@
         font-size: 14pt;
         font-weight: bold;
         text-transform: uppercase;
-        color: #000;
-        font-family: Arial, sans-serif;
-    }
-    .label [style*="font-size:18pt"] {
-        font-size: 18pt;
-        font-weight: 800;
         color: #000;
         font-family: Arial, sans-serif;
     }
