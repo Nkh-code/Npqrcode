@@ -1369,8 +1369,11 @@
                 showToast("✓ Imprimante Zebra connectée en direct via USB !");
             } catch (err) {
                 console.warn("Erreur d'initialisation USB:", err);
-                if (err.name === 'SecurityError' || String(err).includes('claimInterface')) {
-                    alert("Accès USB : Linux a restreint le port. Ajoutez votre compte au groupe lp (sudo usermod -a -G lp $USER) puis redémarrez la session.");
+                const errMsg = String(err && (err.message || err));
+                if (errMsg.includes('claimInterface') || errMsg.includes('busy') || err.name === 'SecurityError') {
+                    alert("Accès USB bloqué par Linux :\nLe pilote système 'usblp' retient l'imprimante.\n\nTapez cette commande dans votre terminal Linux pour la débloquer immédiatement :\n\nsudo rmmod usblp\n\nPuis recliquez sur 'Connecter USB'.");
+                } else {
+                    alert("Erreur USB : " + errMsg);
                 }
             }
         }
