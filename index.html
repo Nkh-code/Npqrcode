@@ -1356,6 +1356,22 @@
             const btn = document.getElementById('btnConnectUsb');
             if (btn) btn.style.display = 'inline-flex';
 
+            navigator.usb.addEventListener('disconnect', (event) => {
+                if (usbPrinterDevice && event.device === usbPrinterDevice) {
+                    usbPrinterDevice = null;
+                    usbBulkOutEndpoint = null;
+                    if (btn) btn.style.display = 'inline-flex';
+                    updatePrinterStatus();
+                    showToast("Câble USB débranché.");
+                }
+            });
+
+            navigator.usb.addEventListener('connect', async (event) => {
+                if (event.device && event.device.vendorId === 0x0a5f) {
+                    await setupUsbPrinter(event.device);
+                }
+            });
+
             try {
                 const devices = await navigator.usb.getDevices();
                 const zebra = devices.find(d => d.vendorId === 0x0a5f);
@@ -1428,16 +1444,11 @@
         }
 
         async function printDirectUsb(zplString) {
-            if (!usbPrinterDevice || usbBulkOutEndpoint === null) return false;
-            try {
-                const encoder = new TextEncoder();
-                const data = encoder.encode(zplString);
-                await usbPrinterDevice.transferOut(usbBulkOutEndpoint, data);
-                return true;
-            } catch (err) {
-                console.error("Erreur d'envoi USB:", err);
-                return false;
-            }
+            if (!usbPrinterDevice || usbBulkOutEndpoint === null) throw new Error("Imprimante non initialisée");
+            const encoder = new TextEncoder();
+            const data = encoder.encode(zplString);
+            await usbPrinterDevice.transferOut(usbBulkOutEndpoint, data);
+            return true;
         }
 
         /* =====================================================================
@@ -1654,9 +1665,13 @@
 
             // 1. Essai d'impression directe WebUSB
             if (usbPrinterDevice && zpl) {
-                const ok = await printDirectUsb(zpl);
-                if (ok) {
+                try {
+                    await printDirectUsb(zpl);
                     showToast(`✓ ${labelsToPrint.length} étiquette(s) imprimée(s) directement via USB !`);
+                    return;
+                } catch (err) {
+                    console.error("Erreur d'envoi USB:", err);
+                    alert("Erreur lors de l'envoi USB à l'imprimante :\n" + (err.message || err) + "\n\nVérifiez que le câble USB est bien branché.");
                     return;
                 }
             }
